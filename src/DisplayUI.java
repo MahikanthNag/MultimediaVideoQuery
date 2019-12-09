@@ -48,8 +48,8 @@ public class DisplayUI extends Frame implements ActionListener {
 	List<BufferedImage> images;
 	List<BufferedImage> queryImages;
 	
-	PlaySound audio;
-	PlaySound queryAudio;
+	AudioPlayer audio;
+	AudioPlayer queryAudio;
 	
 	JLabel videoLabel;
 	JLabel queryLabel;
@@ -58,24 +58,24 @@ public class DisplayUI extends Frame implements ActionListener {
 	ImageIcon queryIcon;
 	
 	Panel rootPanel;
+	Panel gridPanel;
+	
+	Thread videoThread;
+	Thread audioThread;
+	Thread queryVideoThread;
+	Thread queryAudioThread;
 	
 	int currentFrame;
 	int currentQueryFrame;
+	int currentAudioFrame;
+	int currentQueryAudioFrame;
 	
 	int frameRate = 30;
 	
 	int videoState;
+	int queryVideoState;
 	
-	enum State{		
-		PLAY(1), PAUSE(2), STOP(3);
-		int state;
-		
-		private State(int state) {
-			this.state = state;
-		}
-	}
-	
-	DisplayUI() throws FileNotFoundException, IOException {		
+	DisplayUI() throws IOException {		
 		rootPanel = new Panel();
 		
 		playVideo = new Button("Play");
@@ -107,29 +107,42 @@ public class DisplayUI extends Frame implements ActionListener {
 		queryLabel.setIcon(queryIcon);
 		videoPanel.add(videoLabel);
 		queryVideoPanel.add(queryLabel);
-		
-		rootPanel.add(videoPanel);
-		rootPanel.add(queryVideoPanel);
+				
+		gridPanel = new Panel();
+		GridLayout grid = new GridLayout(2, 2);
+		gridPanel.setLayout(grid);
 		
 		Panel queryOpsPanel = new Panel();
 		queryOpsPanel.setLayout(new GridLayout(2, 2));
 		queryOpsPanel.add(playQueryVideo);
 		queryOpsPanel.add(pauseQueryVideo);
 		queryOpsPanel.add(stopQueryVideo);
-		
-		rootPanel.add(queryOpsPanel);
+				
 		
 		Panel opsPanel = new Panel();
 		opsPanel.setLayout(new GridLayout(2, 2));
 		opsPanel.add(playVideo);
 		opsPanel.add(pauseVideo);
 		opsPanel.add(stopVideo);
-
-		rootPanel.add(opsPanel);
-		add(rootPanel, BorderLayout.SOUTH);
+		
+		gridPanel.add(videoPanel);
+		gridPanel.add(queryVideoPanel);
+		gridPanel.add(opsPanel);
+		gridPanel.add(queryOpsPanel);
+		
+		rootPanel.add(gridPanel);		
+//		add(rootPanel, BorderLayout.SOUTH);
+		add(gridPanel, BorderLayout.SOUTH);
 		
 		images = new ArrayList<>();
 		queryImages = new ArrayList<>();
+		
+		try {
+			setupVideo("flowers");
+			setupQueryVideo("first");
+		} catch (PlayWaveException e) {
+			e.printStackTrace();
+		}		
 	}
 	
 	private String getFileNameSuffix(int num) {
@@ -167,35 +180,33 @@ public class DisplayUI extends Frame implements ActionListener {
 		return img;
 	}
 	
-	public void setupVideo(String path) throws IOException {
+	public void setupVideo(String path) throws IOException, PlayWaveException {
 		for(int i = 0; i < 600; i++) {
 			File file = new File(baseDBVideoPath + path + "/" + path + getFileNameSuffix(i + 1) + (i + 1) + ".rgb");
 			BufferedImage img = getBufferedImageFromFile(file);
 			images.add(img);
 		}
-		
-		currentFrame = 0;
-		audio = new PlaySound(new FileInputStream(baseDBVideoPath + path + "/" + path + ".wav"));
+		audio = new AudioPlayer();
+		audio.play(baseDBVideoPath + path + "/" + path + ".wav");
 	}
 	
-	public void setupQueryVideo(String path) throws IOException {
+	public void setupQueryVideo(String path) throws IOException, PlayWaveException {
 		for(int i = 0; i < 150; i++) {
 			File file = new File(baseQueryVideoPath + path + "/" + path + getFileNameSuffix(i + 1) + (i + 1) + ".rgb");
 			BufferedImage img = getBufferedImageFromFile(file);
 			queryImages.add(img);
 		}
-		
-		currentQueryFrame = 0;
-		queryAudio = new PlaySound(new FileInputStream(baseQueryVideoPath + path + "/" + path + ".wav"));
+		queryAudio = new AudioPlayer();
+		queryAudio.play(baseQueryVideoPath + path + "/" + path + ".wav");
 	}
 	
 	public void playVideo() throws FileNotFoundException {
-//		audio = new PlaySound(new FileInputStream(baseDBVideoPath + path + "/" + path + ".wav"));
-		Thread audioThread = new Thread(new Runnable() {
+		audioThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
 				try {
-					audio.play();
+					audio.audioClip.setFramePosition(currentAudioFrame);
+					audio.audioClip.start();
 				}
 				catch(Exception e) {
 					e.printStackTrace();
@@ -203,30 +214,24 @@ public class DisplayUI extends Frame implements ActionListener {
 			}
 		});
 		
-		Thread videoThread = new Thread(new Runnable() {
+		videoThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
 				for(int i = currentFrame; i < 600; i++) {
-					BufferedImage image = images.get(i);
-					videoIcon.setImage(image);
-					videoLabel.setIcon(videoIcon);
-					rootPanel.remove(videoPanel);
-//					videoPanel = new Panel();
-//					videoPanel.add(videoLabel, 0);	
-					rootPanel.add(videoPanel, 0);
-					repaint();
-					revalidate();
-			        
+					updateFrameInVideoAndRepaint(videoIcon, videoLabel, videoPanel, gridPanel, i, 0, 0);
 			        try {
 						Thread.sleep(1000 / frameRate);
 					} catch (InterruptedException e) {						
 						// TODO : Think what to write here
-						e.printStackTrace();
+						// e.printStackTrace();
+						currentFrame = i;
+						break;
 					}
 				}
 				if(videoState == PLAY) {
 					videoState = STOP;
 					currentFrame = 0;
+					currentAudioFrame = 0;
 				}
 			}
 		});
@@ -237,43 +242,58 @@ public class DisplayUI extends Frame implements ActionListener {
 	
 	public void playQueryVideo() throws FileNotFoundException {
 //		queryAudio = new PlaySound(new FileInputStream(baseQueryVideoPath + path + "/" + path + ".wav"));
-		Thread audioThread = new Thread(new Runnable() {
+		queryAudioThread = new Thread(new Runnable() {
 
 			@Override
 			public void run() {
 				try {
-					queryAudio.play();
+					queryAudio.audioClip.setFramePosition(currentQueryAudioFrame);
+					queryAudio.audioClip.start();
 				}
 				catch(Exception e) {
-					
+					e.printStackTrace();
 				}				
 			}
 		});
 		
-		Thread videoThread = new Thread(new Runnable() {
+		queryVideoThread = new Thread(new Runnable() {
 			
 			@Override
 			public void run() {
 				for(int i = currentQueryFrame; i < 150; i++) {
 					BufferedImage image = queryImages.get(i);
-					videoIcon.setImage(image);								        
-//			        setVisible(true);
-			        
+					updateFrameInVideoAndRepaint(queryIcon, queryLabel, queryVideoPanel, gridPanel, i, 1, 1);
+//										
+//					queryIcon.setImage(image);
+//					queryLabel.setIcon(queryIcon);
+//					gridPanel.remove(queryVideoPanel);
+//					queryVideoPanel = new Panel();
+//					queryVideoPanel.add(queryLabel, 0);
+//					gridPanel.add(queryVideoPanel, 1);
+//					rootPanel.remove(gridPanel);	
+//					rootPanel.add(gridPanel, 0);
+					
+					// To refresh the UI. There could be a simpler (automatic) way too
+					repaint();
+					revalidate();
+					
 			        try {
 						Thread.sleep(1000 / frameRate);
 					} catch (InterruptedException e) {						
-						// TODO : Think what to write here
-						e.printStackTrace();
+						currentQueryFrame = i;
+						break;
+						
 					}
 				}
-				if(videoState == PLAY) {
-					videoState = STOP;
-					currentFrame = 0;
+				if(queryVideoState == PLAY) {
+					queryVideoState = STOP;
+					currentQueryFrame = 0;
+					currentQueryAudioFrame = 0;
 				}
 			}
 		});
-		videoThread.start();
-		audioThread.start();
+		queryVideoThread.start();
+		queryAudioThread.start();
 	}
 	
 	public void display() {
@@ -284,29 +304,93 @@ public class DisplayUI extends Frame implements ActionListener {
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if(e.getSource() == playVideo) {
-			try {
-				setupVideo("flowers");
-				playVideo();
-			} catch (Exception e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
+			if(videoState != PLAY) {
+				try {					
+					videoState = PLAY;
+					playVideo();
+				} catch (Exception e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}	
+			}			
 		}
 		else if(e.getSource() == pauseVideo) {
-			
+			if(videoState == PLAY) {
+				videoState = PAUSE;
+				if(videoThread != null && audioThread != null) {
+					videoThread.interrupt();
+					audioThread.interrupt();
+					currentAudioFrame = audio.audioClip.getFramePosition();
+					audio.audioClip.stop();
+				}				
+			}			
 		}
-		else if(e.getSource() == stopVideo) {
+		else if(e.getSource() == stopVideo && videoState != STOP) {
+			videoState = STOP;
+			if(videoThread != null && audioThread != null) {
+				videoThread.interrupt();
+				audioThread.interrupt();				
+				audio.audioClip.stop();
+				currentFrame = 0;
+				currentAudioFrame = 0;
+				audio.audioClip.setFramePosition(0);
+				updateFrameInVideoAndRepaint(videoIcon, videoLabel, videoPanel, gridPanel, currentFrame, 0, 0);
+			}
 			
 		}
 		else if(e.getSource() == playQueryVideo) {
-			
+			if(queryVideoState != PLAY) {
+				try {				
+					playQueryVideo();
+					queryVideoState = PLAY;
+				} catch (Exception e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}
 		}
 		else if(e.getSource() == pauseQueryVideo) {
-			
+			if(queryVideoState == PLAY) {
+				queryVideoState = PAUSE;
+				if(queryVideoThread != null && queryAudioThread != null) {
+					queryVideoThread.interrupt();
+					queryAudioThread.interrupt();
+					currentQueryAudioFrame = queryAudio.audioClip.getFramePosition();
+					queryAudio.audioClip.stop();
+				}				
+			}
 		}
-		else if(e.getSource() == stopQueryVideo) {
-			
+		else if(e.getSource() == stopQueryVideo && queryVideoState != STOP) {
+			queryVideoState = STOP;
+			if(queryVideoThread != null && queryAudioThread != null) {
+				queryVideoThread.interrupt();
+				queryAudioThread.interrupt();				
+				queryAudio.audioClip.stop();
+				currentQueryFrame = 0;
+				currentQueryAudioFrame = 0;
+				queryAudio.audioClip.setFramePosition(0);
+				updateFrameInVideoAndRepaint(queryIcon, queryLabel, queryVideoPanel, gridPanel, currentFrame, 1, 1);
+				
+			}
 		}		
+	}
+
+	private void updateFrameInVideoAndRepaint(ImageIcon icon, JLabel label, Panel videoPanel, Panel gridPanel, int i, int index, int type) {
+		BufferedImage image;
+		if(type == 0) {
+			image = images.get(i);			
+		}
+		else {
+			image = queryImages.get(i);
+		}
+		icon.setImage(image);
+		label.setIcon(icon);
+		gridPanel.remove(videoPanel);
+		videoPanel.remove(label);
+		videoPanel.add(label, 0);
+		gridPanel.add(videoPanel, index);
+		repaint();
+		revalidate();
 	}
 	
 	public static void main(String[] args) {
