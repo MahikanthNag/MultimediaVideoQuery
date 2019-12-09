@@ -7,7 +7,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -17,23 +16,7 @@ import java.util.List;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 
-public class DisplayUI extends Frame implements ActionListener {
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;	
-	
-	static final int HEIGHT = 288;
-    static final int WIDTH = 352;
-    
-    static final int PLAY = 1;
-    static final int PAUSE = 2;
-    static final int STOP = 3;
-    
-    String baseDBVideoPath = "/Users/mahikanthnag/Downloads/database_videos/";
-    String baseQueryVideoPath = "/Users/mahikanthnag/Downloads/query/";
-    
+public class DisplayUI extends Frame implements ActionListener {    
 	Button playVideo;
 	Button playQueryVideo;
 	Button pauseVideo;
@@ -137,12 +120,8 @@ public class DisplayUI extends Frame implements ActionListener {
 		images = new ArrayList<>();
 		queryImages = new ArrayList<>();
 		
-		try {
-			setupVideo("flowers");
-			setupQueryVideo("first");
-		} catch (PlayWaveException e) {
-			e.printStackTrace();
-		}		
+		setupVideo("flowers");
+		setupQueryVideo("first");
 	}
 	
 	private String getFileNameSuffix(int num) {
@@ -157,20 +136,20 @@ public class DisplayUI extends Frame implements ActionListener {
 		}
 	}
 	
-	private BufferedImage getBufferedImageFromFile(File file) throws FileNotFoundException, IOException {
+	private BufferedImage getBufferedImageFromFile(File file) throws IOException {
 		RandomAccessFile raf = new RandomAccessFile(file, "r");
 		raf.seek(0);
-		byte[] bytes = new byte[HEIGHT * WIDTH * 3];
+		byte[] bytes = new byte[Constants.HEIGHT * Constants.WIDTH * 3];
 		raf.read(bytes);
 		raf.close();
 		
-		BufferedImage img = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
+		BufferedImage img = new BufferedImage(Constants.WIDTH, Constants.HEIGHT, BufferedImage.TYPE_INT_RGB);
 		int ind = 0;
-		for(int y = 0; y < HEIGHT; y++) {
-			for(int x = 0; x < WIDTH; x++) {					
+		for(int y = 0; y < Constants.HEIGHT; y++) {
+			for(int x = 0; x < Constants.WIDTH; x++) {					
 				int r = bytes[ind];
-				int g = bytes[ind+HEIGHT*WIDTH];
-				int b = bytes[ind+HEIGHT*WIDTH*2];
+				int g = bytes[ind + Constants.HEIGHT * Constants.WIDTH];
+				int b = bytes[ind + Constants.HEIGHT * Constants.WIDTH * 2];
 
 				int pix = 0xff000000 | ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff);
 				img.setRGB(x,y,pix);
@@ -180,27 +159,27 @@ public class DisplayUI extends Frame implements ActionListener {
 		return img;
 	}
 	
-	public void setupVideo(String path) throws IOException, PlayWaveException {
+	public void setupVideo(String path) throws IOException {
 		for(int i = 0; i < 600; i++) {
-			File file = new File(baseDBVideoPath + path + "/" + path + getFileNameSuffix(i + 1) + (i + 1) + ".rgb");
+			File file = new File(Constants.BASE_DB_VIDEO_PATH + path + "/" + path + getFileNameSuffix(i + 1) + (i + 1) + ".rgb");
 			BufferedImage img = getBufferedImageFromFile(file);
 			images.add(img);
 		}
 		audio = new AudioPlayer();
-		audio.play(baseDBVideoPath + path + "/" + path + ".wav");
+		audio.play(Constants.BASE_DB_VIDEO_PATH + path + "/" + path + ".wav");
 	}
 	
-	public void setupQueryVideo(String path) throws IOException, PlayWaveException {
+	public void setupQueryVideo(String path) throws IOException {
 		for(int i = 0; i < 150; i++) {
-			File file = new File(baseQueryVideoPath + path + "/" + path + getFileNameSuffix(i + 1) + (i + 1) + ".rgb");
+			File file = new File(Constants.BASE_QUERY_VIDEO_PATH + path + "/" + path + getFileNameSuffix(i + 1) + (i + 1) + ".rgb");
 			BufferedImage img = getBufferedImageFromFile(file);
 			queryImages.add(img);
 		}
 		queryAudio = new AudioPlayer();
-		queryAudio.play(baseQueryVideoPath + path + "/" + path + ".wav");
+		queryAudio.play(Constants.BASE_QUERY_VIDEO_PATH + path + "/" + path + ".wav");
 	}
 	
-	public void playVideo() throws FileNotFoundException {
+	public void playVideo() {
 		audioThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
@@ -228,8 +207,8 @@ public class DisplayUI extends Frame implements ActionListener {
 						break;
 					}
 				}
-				if(videoState == PLAY) {
-					videoState = STOP;
+				if(videoState == Constants.PLAY) {
+					videoState = Constants.STOP;
 					currentFrame = 0;
 					currentAudioFrame = 0;
 				}
@@ -240,8 +219,7 @@ public class DisplayUI extends Frame implements ActionListener {
 	}
 	
 	
-	public void playQueryVideo() throws FileNotFoundException {
-//		queryAudio = new PlaySound(new FileInputStream(baseQueryVideoPath + path + "/" + path + ".wav"));
+	public void playQueryVideo() {
 		queryAudioThread = new Thread(new Runnable() {
 
 			@Override
@@ -261,21 +239,7 @@ public class DisplayUI extends Frame implements ActionListener {
 			@Override
 			public void run() {
 				for(int i = currentQueryFrame; i < 150; i++) {
-					BufferedImage image = queryImages.get(i);
-					updateFrameInVideoAndRepaint(queryIcon, queryLabel, queryVideoPanel, gridPanel, i, 1, 1);
-//										
-//					queryIcon.setImage(image);
-//					queryLabel.setIcon(queryIcon);
-//					gridPanel.remove(queryVideoPanel);
-//					queryVideoPanel = new Panel();
-//					queryVideoPanel.add(queryLabel, 0);
-//					gridPanel.add(queryVideoPanel, 1);
-//					rootPanel.remove(gridPanel);	
-//					rootPanel.add(gridPanel, 0);
-					
-					// To refresh the UI. There could be a simpler (automatic) way too
-					repaint();
-					revalidate();
+					updateFrameInVideoAndRepaint(queryIcon, queryLabel, queryVideoPanel, gridPanel, i, 1, 1);					
 					
 			        try {
 						Thread.sleep(1000 / frameRate);
@@ -285,8 +249,8 @@ public class DisplayUI extends Frame implements ActionListener {
 						
 					}
 				}
-				if(queryVideoState == PLAY) {
-					queryVideoState = STOP;
+				if(queryVideoState == Constants.PLAY) {
+					queryVideoState = Constants.STOP;
 					currentQueryFrame = 0;
 					currentQueryAudioFrame = 0;
 				}
@@ -304,19 +268,18 @@ public class DisplayUI extends Frame implements ActionListener {
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if(e.getSource() == playVideo) {
-			if(videoState != PLAY) {
+			if(videoState != Constants.PLAY) {
 				try {					
-					videoState = PLAY;
+					videoState = Constants.PLAY;
 					playVideo();
 				} catch (Exception e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}	
 			}			
 		}
 		else if(e.getSource() == pauseVideo) {
-			if(videoState == PLAY) {
-				videoState = PAUSE;
+			if(videoState == Constants.PLAY) {
+				videoState = Constants.PAUSE;
 				if(videoThread != null && audioThread != null) {
 					videoThread.interrupt();
 					audioThread.interrupt();
@@ -325,8 +288,8 @@ public class DisplayUI extends Frame implements ActionListener {
 				}				
 			}			
 		}
-		else if(e.getSource() == stopVideo && videoState != STOP) {
-			videoState = STOP;
+		else if(e.getSource() == stopVideo && videoState != Constants.STOP) {
+			videoState = Constants.STOP;
 			if(videoThread != null && audioThread != null) {
 				videoThread.interrupt();
 				audioThread.interrupt();				
@@ -339,19 +302,18 @@ public class DisplayUI extends Frame implements ActionListener {
 			
 		}
 		else if(e.getSource() == playQueryVideo) {
-			if(queryVideoState != PLAY) {
+			if(queryVideoState != Constants.PLAY) {
 				try {				
 					playQueryVideo();
-					queryVideoState = PLAY;
+					queryVideoState = Constants.PLAY;
 				} catch (Exception e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			}
 		}
 		else if(e.getSource() == pauseQueryVideo) {
-			if(queryVideoState == PLAY) {
-				queryVideoState = PAUSE;
+			if(queryVideoState == Constants.PLAY) {
+				queryVideoState = Constants.PAUSE;
 				if(queryVideoThread != null && queryAudioThread != null) {
 					queryVideoThread.interrupt();
 					queryAudioThread.interrupt();
@@ -360,8 +322,8 @@ public class DisplayUI extends Frame implements ActionListener {
 				}				
 			}
 		}
-		else if(e.getSource() == stopQueryVideo && queryVideoState != STOP) {
-			queryVideoState = STOP;
+		else if(e.getSource() == stopQueryVideo && queryVideoState != Constants.STOP) {
+			queryVideoState = Constants.STOP;
 			if(queryVideoThread != null && queryAudioThread != null) {
 				queryVideoThread.interrupt();
 				queryAudioThread.interrupt();				
@@ -392,7 +354,7 @@ public class DisplayUI extends Frame implements ActionListener {
 		repaint();
 		revalidate();
 	}
-	
+
 	public static void main(String[] args) {
 		try {
 			DisplayUI ui = new DisplayUI();

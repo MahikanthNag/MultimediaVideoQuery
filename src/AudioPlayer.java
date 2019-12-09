@@ -6,12 +6,10 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.DataLine;
-import javax.sound.sampled.LineEvent;
-import javax.sound.sampled.LineListener;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
-public class AudioPlayer implements LineListener {
+public class AudioPlayer {
      
     /**
      * this flag indicates whether the playback completes or not.
@@ -35,22 +33,9 @@ public class AudioPlayer implements LineListener {
  
             audioClip = (Clip) AudioSystem.getLine(info);
  
-            audioClip.addLineListener(this);
+//            audioClip.addLineListener(this);
  
             audioClip.open(audioStream);
-             
-//            audioClip.start();
-             
-//            while (!playCompleted) {
-//                // wait for the playback completes
-////                try {
-////                    Thread.sleep(1000);
-////                } catch (InterruptedException ex) {
-////                    ex.printStackTrace();
-////                }
-//            }
-             
-//            audioClip.close();
              
         } catch (UnsupportedAudioFileException ex) {
             System.out.println("The specified audio file is not supported.");
@@ -64,28 +49,4 @@ public class AudioPlayer implements LineListener {
         }
          
     }
-     
-    /**
-     * Listens to the START and STOP events of the audio line.
-     */
-    @Override
-    public void update(LineEvent event) {
-        LineEvent.Type type = event.getType();
-         
-        if (type == LineEvent.Type.START) {
-//            System.out.println("Playback started.");
-             
-        } else if (type == LineEvent.Type.STOP) {
-//            playCompleted = true;
-//            System.out.println("Playback completed.");
-        }
- 
-    }
- 
-//    public static void main(String[] args) {
-//        String audioFilePath = "";
-//        AudioPlayer player = new AudioPlayer();
-//        player.play(audioFilePath);
-//    }
- 
 }
