@@ -35,6 +35,16 @@ public class VideoDataSerialization {
 		dominantColors.caluculateAndSerializeColorValue("starcraft");
 		dominantColors.caluculateAndSerializeColorValue("traffic");
 
+		// Store Dominant Motion Values of DB videos
+		MotionStatistics motionStatistics = new MotionStatistics();
+		motionStatistics.caluculateAndSerializeMotionValue("flowers");
+		motionStatistics.caluculateAndSerializeMotionValue("interview");
+		motionStatistics.caluculateAndSerializeMotionValue("movie");
+		motionStatistics.caluculateAndSerializeMotionValue("musicvideo");
+		motionStatistics.caluculateAndSerializeMotionValue("sports");
+		motionStatistics.caluculateAndSerializeMotionValue("starcraft");
+		motionStatistics.caluculateAndSerializeMotionValue("traffic");
+
 		// Store Audio Values of DB videos
 		AudioSemantics audioSemantics = new AudioSemantics();
 		audioSemantics.caluculateAndSerializeColorValue("flowers");
