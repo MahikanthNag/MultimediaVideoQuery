@@ -11,6 +11,8 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import javax.sound.sampled.AudioFormat;
@@ -24,6 +26,20 @@ public class AudioSemantics {
 	private int minValue = Integer.MAX_VALUE;
 	private int maxValue = Integer.MIN_VALUE;
 	double audioVariance;
+	
+	Map<String, Double> similarities = new HashMap<>();
+	
+	public Map<String, Double> calculateStatsOfAllPairs(String queryPath) throws ClassNotFoundException, IOException {
+		similarities.put("flowers", calculateSimilarity("flowers", queryPath));
+		similarities.put("interview", calculateSimilarity("interview", queryPath));
+		similarities.put("movie", calculateSimilarity("movie", queryPath));
+		similarities.put("musicvideo", calculateSimilarity("musicvideo", queryPath));
+		similarities.put("sports", calculateSimilarity("sports", queryPath));
+		similarities.put("starcraft", calculateSimilarity("starcraft", queryPath));
+		similarities.put("traffic", calculateSimilarity("traffic", queryPath));
+		
+		return similarities;
+	}
 	
 	public double audioAnalysis(String filePath) {
 		File file = new File(filePath);

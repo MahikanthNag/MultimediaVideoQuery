@@ -13,7 +13,7 @@ public class VideoDataSerialization {
 	
 	ArrayList<byte[][][]> frames;
 	
-	public static void main(String[] args) throws IOException, ClassNotFoundException {
+	public static void main(String[] args) throws IOException {
 		VideoDataSerialization obj = new VideoDataSerialization();
 		
 		// Store Contrast Values of DB videos
@@ -35,8 +35,16 @@ public class VideoDataSerialization {
 		dominantColors.caluculateAndSerializeColorValue("sports");
 		dominantColors.caluculateAndSerializeColorValue("starcraft");
 		dominantColors.caluculateAndSerializeColorValue("traffic");
-		
-		
+
+		// Store Audio Values of DB videos
+		AudioSemantics audioSemantics = new AudioSemantics();
+		audioSemantics.caluculateAndSerializeColorValue("flowers");
+		audioSemantics.caluculateAndSerializeColorValue("interview");
+		audioSemantics.caluculateAndSerializeColorValue("movie");
+		audioSemantics.caluculateAndSerializeColorValue("musicvideo");
+		audioSemantics.caluculateAndSerializeColorValue("sports");
+		audioSemantics.caluculateAndSerializeColorValue("starcraft");
+		audioSemantics.caluculateAndSerializeColorValue("traffic");
 	}
 	
 	private void deserialize(String path) throws IOException, ClassNotFoundException {

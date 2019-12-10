@@ -6,13 +6,25 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.RandomAccessFile;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ContrastStatistics {
 
-	List<int[][][]> queryVideoFrames = new ArrayList<>();
-
+	Map<String, Double> similarities = new HashMap<>();
+	
+	public Map<String, Double> calculateStatsOfAllPairs(String queryPath) throws ClassNotFoundException, IOException {
+		similarities.put("flowers", calculateStats("flowers", queryPath));
+		similarities.put("interview", calculateStats("interview", queryPath));
+		similarities.put("movie", calculateStats("movie", queryPath));
+		similarities.put("musicvideo", calculateStats("musicvideo", queryPath));
+		similarities.put("sports", calculateStats("sports", queryPath));
+		similarities.put("starcraft", calculateStats("starcraft", queryPath));
+		similarities.put("traffic", calculateStats("traffic", queryPath));
+		
+		return similarities;
+	}
+	
 	public double calculateStats(String path, String queryPath) throws IOException, ClassNotFoundException {		
 //		caluculateAndSerializeContrastValue(path);
         
