@@ -81,11 +81,12 @@ public class AudioSemantics {
 	}
 	
 
-	public double calculateSimilarity(String queryPath, String databaseAudioPath) throws IOException, ClassNotFoundException {
-		double queryVariance = audioAnalysis(Constants.BASE_DB_VIDEO_PATH + queryPath + "/" + queryPath + ".wav");
+	public double calculateSimilarity(String databaseAudioPath, String queryPath) throws IOException, ClassNotFoundException {
+		double queryVariance = audioAnalysis(Constants.BASE_QUERY_VIDEO_PATH + queryPath + "/" + queryPath + ".wav");
 		FileInputStream fis = new FileInputStream(Constants.BASE_DB_VIDEO_PATH + "serialized_video_data/" + databaseAudioPath + "_audio.txt");
         ObjectInputStream iis = new ObjectInputStream(fis);
         double databaseAudioVariance = (double) iis.readObject();
+        iis.close();
 		
 		double similarity = Math.min(queryVariance, databaseAudioVariance)/Math.max(queryVariance, databaseAudioVariance);
 		

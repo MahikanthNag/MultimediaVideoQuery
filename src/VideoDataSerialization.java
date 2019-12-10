@@ -53,6 +53,6 @@ public class VideoDataSerialization {
 		audioSemantics.caluculateAndSerializeColorValue("musicvideo");
 		audioSemantics.caluculateAndSerializeColorValue("sports");
 		audioSemantics.caluculateAndSerializeColorValue("starcraft");
-		audioSemantics.caluculateAndSerializeColorValue("traffic");
+		audioSemantics.caluculateAndSerializeColorValue("traffic");		
 	}
 }

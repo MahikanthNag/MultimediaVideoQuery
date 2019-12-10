@@ -30,7 +30,7 @@ public class ContrastStatistics {
         ObjectInputStream iis = new ObjectInputStream(fis);
         double avgContrast = (double) iis.readObject();
         
-		double avgQueryContrast = findAverageContrastOfAllFrames(Constants.BASE_QUERY_VIDEO_PATH + queryPath + "/" + queryPath, 0);
+		double avgQueryContrast = findAverageContrastOfAllFrames(Constants.BASE_QUERY_VIDEO_PATH + queryPath + "/" + queryPath, 1);
 		iis.close();
 		
 		return getSimilarityScore(avgContrast, avgQueryContrast);		
@@ -47,7 +47,7 @@ public class ContrastStatistics {
 	}
 
 	private double getSimilarityScore(double avgContrast, double avgQueryContrast) {
-		return Math.min(avgContrast, avgQueryContrast) * 100 / Math.max(avgContrast, avgQueryContrast);
+		return  Constants.CONTRAST_PRIORITY * Math.min(avgContrast, avgQueryContrast) * 100 / Math.max(avgContrast, avgQueryContrast);
 	}
 
 	private double findAverageContrastOfAllFrames(String path, int type) throws IOException {
@@ -85,7 +85,7 @@ public class ContrastStatistics {
 			totalBrightnessOfAllFrames += brightness / (Constants.HEIGHT * Constants.WIDTH);			
 		}
 		averageContrast = totalBrightnessOfAllFrames / numOFrames;
-		return averageContrast * Constants.CONTRAST_PRIORITY;
+		return averageContrast;
 	}
 
 	private String getFileNameSuffix(int num) {

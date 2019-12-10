@@ -32,14 +32,14 @@ public class MotionStatistics {
 		FileInputStream fis = new FileInputStream(Constants.BASE_DB_VIDEO_PATH + "serialized_video_data/" + path + "_motion.txt");
         ObjectInputStream iis = new ObjectInputStream(fis);
 		HashMap<Integer, Integer> dbMotionStatistics = (HashMap<Integer, Integer>) iis.readObject();
-		HashMap<Integer, Integer> dominantMotionInQuery = findMotionForAllFrames(Constants.BASE_QUERY_VIDEO_PATH + queryPath + "/" + queryPath, 0);
+		HashMap<Integer, Integer> dominantMotionInQuery = findMotionForAllFrames(Constants.BASE_QUERY_VIDEO_PATH + queryPath + "/" + queryPath, 1);
 		iis.close();
 		
 		return getSimilarityScore(dbMotionStatistics, dominantMotionInQuery);
 	}
 	
 	private double getSimilarityScore(HashMap<Integer, Integer> dbMotionStatistics, HashMap<Integer, Integer> dominantMotionInQuery) {
-		return 100.0;
+		return Constants.MOTION_VECTOR_PRIORITY * 100.0;
 	}
 
 	public void caluculateAndSerializeMotionValue(String path) throws IOException {
@@ -60,16 +60,18 @@ public class MotionStatistics {
 			frameSize = 150;
 		}
 		
-		BufferedImage prevFrame = null;
+		BufferedImage prevFrame = null;		
 		for(int i = 0; i < frameSize; i++) {
 			String framePath = path + getFileNameSuffix(i + 1) + (i + 1) + ".rgb";
 			BufferedImage curFrame = new BufferedImage(Constants.WIDTH, Constants.HEIGHT, BufferedImage.TYPE_INT_RGB);
 			readImageRGB(Constants.WIDTH, Constants.HEIGHT, framePath, curFrame);
-			int imageDiff = findFrameDifference(curFrame, prevFrame);
+			
+			int imageDiff;			
 			if (i == 0) {
 				framewiseMotionStatistics.put(i, 0);
 			}
 			else {
+				imageDiff = findFrameDifference(curFrame, prevFrame);
 				framewiseMotionStatistics.put(i, imageDiff);				
 			}
 			prevFrame = curFrame;
@@ -126,7 +128,7 @@ public class MotionStatistics {
 			total ++;
 		}
 		imageDiff = imageDiff / total;
-		System.out.println("Image difference " + imageDiff);
+//		System.out.println("Image difference " + imageDiff);
 
 		return (int)imageDiff;
 	}

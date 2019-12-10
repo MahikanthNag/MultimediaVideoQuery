@@ -39,23 +39,23 @@ public class DominantColors {
 		FileInputStream fis = new FileInputStream(Constants.BASE_DB_VIDEO_PATH + "serialized_video_data/" + path + "_color.txt");
         ObjectInputStream iis = new ObjectInputStream(fis);
         dominantColors = (Set<String>) iis.readObject();
-		Set<String> dominantColorsInQuery = findAverageColorOfAllFrames(Constants.BASE_QUERY_VIDEO_PATH + queryPath + "/" + queryPath, 0);
+		Set<String> dominantColorsInQuery = findAverageColorOfAllFrames(Constants.BASE_QUERY_VIDEO_PATH + queryPath + "/" + queryPath, 1);
 		iis.close();
 		
 		return getSimilarityScore(dominantColors, dominantColorsInQuery);
 	}
 	
 	private double getSimilarityScore(Set<String> dominantColors, Set<String> dominantColorsInQuery) {
-		String[] temp = (String[])dominantColorsInQuery.toArray();
+		Object[] temp = dominantColorsInQuery.toArray();
 		int count = 0;
 		
-		for(int i = 0; i < 2000; i++) {
-			if(dominantColors.contains(temp[i])) {
+		for(int i = 0; i < dominantColors.size(); i++) {
+			if(dominantColors.contains((String)temp[i])) {
 				count++;
 			}
 		}
 		
-		return Constants.COLOR_PRIORITY *  count * 100 / 2000;
+		return Constants.COLOR_PRIORITY *  count * 100 / dominantColors.size();
 	}
 
 	public void caluculateAndSerializeColorValue(String path) throws IOException {
@@ -124,7 +124,7 @@ public class DominantColors {
 				return 0;
 			}
 		});
-		int cap = 2000;
+		int cap = dominantMap.size() / 4;
 		int count = 0;
 		for(Map.Entry<String, Integer> item : results) {
 			if(count == cap) break;
