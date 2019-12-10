@@ -12,19 +12,47 @@ import javax.swing.*;
 import java.util.List;
 
 public class MotionStatistics {
+	Map<String, Double> similarities = new HashMap<>();
+
+	public Map<String, Double> calculateStatsOfAllPairs(String queryPath) throws ClassNotFoundException, IOException {
+		similarities.put("flowers", calculateStats("flowers", queryPath));
+		similarities.put("interview", calculateStats("interview", queryPath));
+		similarities.put("movie", calculateStats("movie", queryPath));
+		similarities.put("musicvideo", calculateStats("musicvideo", queryPath));
+		similarities.put("sports", calculateStats("sports", queryPath));
+		similarities.put("starcraft", calculateStats("starcraft", queryPath));
+		similarities.put("traffic", calculateStats("traffic", queryPath));
+		
+		return similarities;
+	}
 	
-	private HashMap<Integer, Integer> framewiseMotionStatistics = new HashMap<>();
+	@SuppressWarnings("unchecked")
+	public double calculateStats(String path, String queryPath) throws IOException, ClassNotFoundException {
+		
+		FileInputStream fis = new FileInputStream(Constants.BASE_DB_VIDEO_PATH + "serialized_video_data/" + path + "_motion.txt");
+        ObjectInputStream iis = new ObjectInputStream(fis);
+		HashMap<Integer, Integer> dbMotionStatistics = (HashMap<Integer, Integer>) iis.readObject();
+		HashMap<Integer, Integer> dominantMotionInQuery = findMotionForAllFrames(Constants.BASE_QUERY_VIDEO_PATH + queryPath + "/" + queryPath, 0);
+		iis.close();
+		
+		return getSimilarityScore(dbMotionStatistics, dominantMotionInQuery);
+	}
+	
+	private double getSimilarityScore(HashMap<Integer, Integer> dbMotionStatistics, HashMap<Integer, Integer> dominantMotionInQuery) {
+		return 100.0;
+	}
 
 	public void caluculateAndSerializeMotionValue(String path) throws IOException {
-		findMotionForAllFrames(Constants.BASE_DB_VIDEO_PATH + path + "/" + path, 0);
+		HashMap<Integer, Integer> framewiseMotionStatistics = findMotionForAllFrames(Constants.BASE_DB_VIDEO_PATH + path + "/" + path, 0);
 		FileOutputStream fos = new FileOutputStream(Constants.BASE_DB_VIDEO_PATH + "serialized_video_data/" + path + "_motion.txt");
         ObjectOutputStream oos = new ObjectOutputStream(fos);
         oos.writeObject(framewiseMotionStatistics);
         oos.close();
 	}
 	
-	private void findMotionForAllFrames(String path, int type) throws IOException {
+	private HashMap<Integer, Integer> findMotionForAllFrames(String path, int type) throws IOException {
 		int frameSize;
+		HashMap<Integer, Integer> framewiseMotionStatistics = new HashMap<>();
 		if(type == 0) {
 			frameSize = 600;
 		}
@@ -45,13 +73,14 @@ public class MotionStatistics {
 				framewiseMotionStatistics.put(i, imageDiff);				
 			}
 			prevFrame = curFrame;
-		}		
+		}
+		return framewiseMotionStatistics;
 	}
 
 	public int findFrameDifference(BufferedImage curImage, BufferedImage prevImage)
 	{
 		int pRED, pGREEN, pBLUE, rRED, rGREEN, rBLUE;
-		List<Integer> diff = new ArrayList<>();
+		List<Float> diff = new ArrayList<>();
 		int width = curImage.getWidth();
 		int height = curImage.getHeight();
 		int[][][] curFrame = new int[width][height][3];
@@ -85,21 +114,21 @@ public class MotionStatistics {
                 rBLUE = (pBLUE < 0) ? 0 : pBLUE;
 
                 if (rRED < 10 && rGREEN < 10 && rBLUE < 10)
-                	diff.add(0);
+                	diff.add(0.0f);
                 else
-                	diff.add((rRED + rGREEN + rBLUE)/3);
+                	diff.add((rRED + rGREEN + rBLUE)/3.0f);
 			}
 		}
-		int imageDiff = 0;
+		float imageDiff = 0;
 		int total = 0;
-		for (Integer d : diff) {
+		for (Float d : diff) {
 			imageDiff += d;
 			total ++;
 		}
 		imageDiff = imageDiff / total;
 		System.out.println("Image difference " + imageDiff);
 
-		return imageDiff;
+		return (int)imageDiff;
 	}
 	private void readImageRGB(int width, int height, String imgPath, BufferedImage img)
 	{
