@@ -13,4 +13,9 @@ public final class Constants {
     
     public static final String BASE_DB_VIDEO_PATH = "/Users/mahikanthnag/Downloads/database_videos/";
     public static final String BASE_QUERY_VIDEO_PATH = "/Users/mahikanthnag/Downloads/query/";
+    
+    public static final String QUERY_VIDEO_NAME = "first";
+    public static final String DB_VIDEO_NAME = "movie";
+    
+    public static final int FRAME_RATE = 30;
 }

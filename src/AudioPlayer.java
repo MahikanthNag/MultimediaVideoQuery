@@ -15,6 +15,7 @@ public class AudioPlayer {
      * this flag indicates whether the playback completes or not.
      */
     boolean playCompleted;
+    int audioFrameSize;
     Clip audioClip;
      
     /**
@@ -28,7 +29,7 @@ public class AudioPlayer {
             AudioInputStream audioStream = AudioSystem.getAudioInputStream(audioFile);
  
             AudioFormat format = audioStream.getFormat();
- 
+            audioFrameSize = format.getFrameSize();
             DataLine.Info info = new DataLine.Info(Clip.class, format);
  
             audioClip = (Clip) AudioSystem.getLine(info);

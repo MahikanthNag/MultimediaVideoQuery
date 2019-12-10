@@ -2,12 +2,12 @@ import java.awt.BorderLayout;
 import java.awt.Button;
 import java.awt.Frame;
 import java.awt.GridLayout;
+import java.awt.Label;
 import java.awt.Panel;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
@@ -36,6 +36,7 @@ public class DisplayUI extends Frame implements ActionListener {
 	
 	JLabel videoLabel;
 	JLabel queryLabel;
+	Label queryVideoName;
 	
 	ImageIcon videoIcon;
 	ImageIcon queryIcon;
@@ -51,12 +52,14 @@ public class DisplayUI extends Frame implements ActionListener {
 	int currentFrame;
 	int currentQueryFrame;
 	int currentAudioFrame;
-	int currentQueryAudioFrame;
-	
-	int frameRate = 30;
+	int currentQueryAudioFrame;	
 	
 	int videoState;
 	int queryVideoState;
+	
+	long start1;
+	long start2;
+	
 	
 	DisplayUI() throws IOException {		
 		rootPanel = new Panel();
@@ -91,15 +94,17 @@ public class DisplayUI extends Frame implements ActionListener {
 		videoPanel.add(videoLabel);
 		queryVideoPanel.add(queryLabel);
 				
-		gridPanel = new Panel();
-		GridLayout grid = new GridLayout(2, 2);
-		gridPanel.setLayout(grid);
+		gridPanel = new Panel(new GridLayout(2, 2));
 		
 		Panel queryOpsPanel = new Panel();
 		queryOpsPanel.setLayout(new GridLayout(2, 2));
 		queryOpsPanel.add(playQueryVideo);
 		queryOpsPanel.add(pauseQueryVideo);
 		queryOpsPanel.add(stopQueryVideo);
+		Panel queryVideoNamePanel = new Panel();
+		queryVideoName = new Label(Constants.QUERY_VIDEO_NAME);
+		queryVideoNamePanel.add(queryVideoName);
+		queryOpsPanel.add(queryVideoNamePanel);
 				
 		
 		Panel opsPanel = new Panel();
@@ -107,21 +112,22 @@ public class DisplayUI extends Frame implements ActionListener {
 		opsPanel.add(playVideo);
 		opsPanel.add(pauseVideo);
 		opsPanel.add(stopVideo);
-		
+
 		gridPanel.add(videoPanel);
 		gridPanel.add(queryVideoPanel);
 		gridPanel.add(opsPanel);
 		gridPanel.add(queryOpsPanel);
 		
-		rootPanel.add(gridPanel);		
-//		add(rootPanel, BorderLayout.SOUTH);
-		add(gridPanel, BorderLayout.SOUTH);
+		rootPanel.add(gridPanel);
+//		rootPanel.add( new JLabel(Constants.QUERY_VIDEO_NAME));		
+		
+		add(rootPanel, BorderLayout.SOUTH);
 		
 		images = new ArrayList<>();
 		queryImages = new ArrayList<>();
 		
-		setupVideo("flowers");
-		setupQueryVideo("first");
+		setupVideo(Constants.DB_VIDEO_NAME);
+		setupQueryVideo(Constants.QUERY_VIDEO_NAME);
 	}
 	
 	private String getFileNameSuffix(int num) {
@@ -186,23 +192,33 @@ public class DisplayUI extends Frame implements ActionListener {
 				try {
 					audio.audioClip.setFramePosition(currentAudioFrame);
 					audio.audioClip.start();
+//					try {
+////						Thread.sleep(20000 / audio.audioFrameSize);
+//					} catch (InterruptedException e) {						
+//						// TODO : Think what to write here
+//						// e.printStackTrace();
+//						currentAudioFrame = audio.audioClip.getFramePosition();
+//						return;
+//					}
 				}
 				catch(Exception e) {
 					e.printStackTrace();
 				}				
 			}
-		});
-		
+		});		
 		videoThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
 				for(int i = currentFrame; i < 600; i++) {
+					start1 = System.currentTimeMillis();
 					updateFrameInVideoAndRepaint(videoIcon, videoLabel, videoPanel, gridPanel, i, 0, 0);
+					long diff = System.currentTimeMillis() - start1;					
 			        try {
-						Thread.sleep(1000 / frameRate);
+			        	// Subtracted 2 just to roughly synch up audio and video output without
+			        	// considerable delay.
+						Thread.sleep(1000 / Constants.FRAME_RATE - diff - 2);
 					} catch (InterruptedException e) {						
 						// TODO : Think what to write here
-						// e.printStackTrace();
 						currentFrame = i;
 						break;
 					}
@@ -239,10 +255,11 @@ public class DisplayUI extends Frame implements ActionListener {
 			@Override
 			public void run() {
 				for(int i = currentQueryFrame; i < 150; i++) {
+					start1 = System.currentTimeMillis();
 					updateFrameInVideoAndRepaint(queryIcon, queryLabel, queryVideoPanel, gridPanel, i, 1, 1);					
-					
+					long diff = System.currentTimeMillis() - start1;
 			        try {
-						Thread.sleep(1000 / frameRate);
+						Thread.sleep(1000 / Constants.FRAME_RATE - diff);
 					} catch (InterruptedException e) {						
 						currentQueryFrame = i;
 						break;
@@ -332,7 +349,6 @@ public class DisplayUI extends Frame implements ActionListener {
 				currentQueryAudioFrame = 0;
 				queryAudio.audioClip.setFramePosition(0);
 				updateFrameInVideoAndRepaint(queryIcon, queryLabel, queryVideoPanel, gridPanel, currentFrame, 1, 1);
-				
 			}
 		}		
 	}
@@ -355,8 +371,10 @@ public class DisplayUI extends Frame implements ActionListener {
 		revalidate();
 	}
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws ClassNotFoundException {
 		try {
+			ContrastStatistics contrastStatistics = new ContrastStatistics();
+			contrastStatistics.calculateStats("flowers", "interview");
 			DisplayUI ui = new DisplayUI();
 			ui.display();
 		} catch (IOException e) {
