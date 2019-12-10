@@ -371,12 +371,11 @@ public class DisplayUI extends Frame implements ActionListener {
 		revalidate();
 	}
 
-	public static void main(String[] args) throws ClassNotFoundException {
+	public static void main(String[] args) {
 		try {
-			ContrastStatistics contrastStatistics = new ContrastStatistics();
-			contrastStatistics.calculateStats("flowers", "interview");
 			DisplayUI ui = new DisplayUI();
 			ui.display();
+			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

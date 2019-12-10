@@ -19,6 +19,19 @@ public class DominantColors {
 	
 	Map<String, Integer> dominantMap = new HashMap<>();
 	Set<String> dominantColors = new HashSet<>();
+	Map<String, Double> similarities = new HashMap<>();
+	
+	public Map<String, Double> calculateStatsOfAllPairs(String queryPath) throws ClassNotFoundException, IOException {
+		similarities.put("flowers", calculateStats("flowers", queryPath));
+		similarities.put("interview", calculateStats("interview", queryPath));
+		similarities.put("movie", calculateStats("movie", queryPath));
+		similarities.put("musicvideo", calculateStats("musicvideo", queryPath));
+		similarities.put("sports", calculateStats("sports", queryPath));
+		similarities.put("starcraft", calculateStats("starcraft", queryPath));
+		similarities.put("traffic", calculateStats("traffic", queryPath));
+		
+		return similarities;
+	}
 	
 	@SuppressWarnings("unchecked")
 	public double calculateStats(String path, String queryPath) throws IOException, ClassNotFoundException {
