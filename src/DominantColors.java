@@ -55,7 +55,7 @@ public class DominantColors {
 			}
 		}
 		
-		return count / 2000;
+		return count * 100 / 2000;
 	}
 
 	public void caluculateAndSerializeColorValue(String path) throws IOException {

@@ -26,11 +26,10 @@ public class ContrastStatistics {
 	}
 	
 	public double calculateStats(String path, String queryPath) throws IOException, ClassNotFoundException {		
-//		caluculateAndSerializeContrastValue(path);
-        
-        FileInputStream fis = new FileInputStream(Constants.BASE_DB_VIDEO_PATH + "serialized_video_data/" + path + "_contrast.txt");
+		FileInputStream fis = new FileInputStream(Constants.BASE_DB_VIDEO_PATH + "serialized_video_data/" + path + "_contrast.txt");
         ObjectInputStream iis = new ObjectInputStream(fis);
         double avgContrast = (double) iis.readObject();
+        
 		double avgQueryContrast = findAverageContrastOfAllFrames(Constants.BASE_QUERY_VIDEO_PATH + queryPath + "/" + queryPath, 0);
 		iis.close();
 		
@@ -48,20 +47,22 @@ public class ContrastStatistics {
 	}
 
 	private double getSimilarityScore(double avgContrast, double avgQueryContrast) {
-		return Math.min(avgContrast, avgQueryContrast) / Math.max(avgContrast, avgQueryContrast);
+		return Math.min(avgContrast, avgQueryContrast) * 100 / Math.max(avgContrast, avgQueryContrast);
 	}
 
 	private double findAverageContrastOfAllFrames(String path, int type) throws IOException {
 		int numOFrames  = 0;
+		
 		if(type == 0) {
 			numOFrames = 600;
 		}
 		else {
 			numOFrames = 150;
 		}
+		
 		double totalBrightnessOfAllFrames = 0;
 		double averageContrast = 0;
-		
+
 		for(int i = 0; i < numOFrames; i++) {
 			File file = new File(path + getFileNameSuffix(i + 1) + (i + 1) + ".rgb");
 			RandomAccessFile raf = new RandomAccessFile(file, "r");
@@ -71,6 +72,7 @@ public class ContrastStatistics {
 			raf.close();			
 			int ind = 0;
 			double brightness = 0.0;
+			
 			for(int y = 0; y < Constants.HEIGHT; y++) {
 				for(int x = 0; x < Constants.WIDTH; x++) {					
 					int r = overcomeByteRangeeError(bytes[ind]);
@@ -80,10 +82,8 @@ public class ContrastStatistics {
 					ind++;
 				}
 			}
-			
 			totalBrightnessOfAllFrames += brightness / (Constants.HEIGHT * Constants.WIDTH);			
 		}
-		
 		averageContrast = totalBrightnessOfAllFrames / numOFrames;
 		return averageContrast;
 	}
