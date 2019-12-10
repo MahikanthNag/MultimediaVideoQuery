@@ -85,7 +85,7 @@ public class ContrastStatistics {
 			totalBrightnessOfAllFrames += brightness / (Constants.HEIGHT * Constants.WIDTH);			
 		}
 		averageContrast = totalBrightnessOfAllFrames / numOFrames;
-		return averageContrast;
+		return averageContrast * Constants.CONTRAST_PRIORITY;
 	}
 
 	private String getFileNameSuffix(int num) {

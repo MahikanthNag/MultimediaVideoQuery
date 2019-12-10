@@ -89,7 +89,7 @@ public class AudioSemantics {
 		
 		double similarity = Math.min(queryVariance, databaseAudioVariance)/Math.max(queryVariance, databaseAudioVariance);
 		
-		return Math.round(similarity*10000.0)/100.0;
+		return Constants.AUDIO_PRIORITY * Math.round(similarity*10000.0)/100.0;
 				
  		
 	}

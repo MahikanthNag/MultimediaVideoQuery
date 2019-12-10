@@ -17,5 +17,10 @@ public final class Constants {
     public static final String QUERY_VIDEO_NAME = "first";
     public static final String DB_VIDEO_NAME = "movie";
     
+    public static final double COLOR_PRIORITY = 0.25;
+    public static final double AUDIO_PRIORITY = 0.25;
+    public static final double MOTION_VECTOR_PRIORITY = 0.25;
+    public static final double CONTRAST_PRIORITY = 0.25;
+    
     public static final int FRAME_RATE = 30;
 }

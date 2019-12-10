@@ -11,7 +11,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
@@ -59,6 +62,20 @@ public class DisplayUI extends Frame implements ActionListener {
 	
 	long start1;
 	long start2;
+	
+	ContrastStatistics contrastStatistics = new ContrastStatistics();
+	Map<String, Double> contrastSimilarity;
+	
+	AudioSemantics audioSemantics = new AudioSemantics();
+	Map<String, Double> audioSimilarity;
+	
+	DominantColors dominantColors = new DominantColors();
+	Map<String, Double> colorSimilarity;
+	
+	MotionStatistics motionStatistics = new MotionStatistics();
+	Map<String, Double> motionSimilarity;
+	
+	Map<String, Double> aggregateRankingMap = new TreeMap<>();
 	
 	
 	DisplayUI() throws IOException {		
@@ -371,14 +388,65 @@ public class DisplayUI extends Frame implements ActionListener {
 		revalidate();
 	}
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws ClassNotFoundException {
 		try {
 			DisplayUI ui = new DisplayUI();
 			ui.display();
+
+			ui.contrastSimilarity = ui.contrastStatistics.calculateStatsOfAllPairs(Constants.QUERY_VIDEO_NAME);
+			
+			ui.audioSimilarity = ui.audioSemantics.calculateStatsOfAllPairs(Constants.QUERY_VIDEO_NAME);
+			
+			ui.colorSimilarity = ui.dominantColors.calculateStatsOfAllPairs(Constants.QUERY_VIDEO_NAME);
+			
+//			ui.motionSimilarity = ui.motionStatistics.caluculateAndSerializeMotionValue(Constants.QUERY_VIDEO_NAME);
+			
+			
+			
+			ui.totalSimilarity("flowers");
+			ui.totalSimilarity("interview");
+			ui.totalSimilarity("movie");
+			ui.totalSimilarity("musicvideo");
+			ui.totalSimilarity("sports");
+			ui.totalSimilarity("starcraft");
+			ui.totalSimilarity("traffic");
+			
+			ui.aggregateRankingMap = sortByValues(ui.aggregateRankingMap);
+			
+			ui.printResults();
 			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
+	
+	public void totalSimilarity(String query) {
+		double totalSimilarity = contrastSimilarity.get(query) + audioSimilarity.get(query)
+								+ colorSimilarity.get(query);
+		aggregateRankingMap.put(query,  totalSimilarity);
+	}
 
+	public static <K, V extends Comparable<V>> Map<K, V> sortByValues(final Map<K, V> map) {
+	    Comparator<K> valueComparator = 
+	             new Comparator<K>() {
+	      public int compare(K k1, K k2) {
+	        int compare = 
+	              map.get(k1).compareTo(map.get(k2));
+	        if (compare == 0) 
+	          return 1;
+	        else 
+	          return compare;
+	      }
+	    };
+	    Map<K, V> sortedByValues = 
+	    	      new TreeMap<K, V>(valueComparator);
+	    	    sortedByValues.putAll(map);
+	    	    return sortedByValues;
+	}
+	
+	public void printResults() {
+		for (Map.Entry<String,Double> entry : aggregateRankingMap.entrySet()) {
+			System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
+		}
+	}
 }
