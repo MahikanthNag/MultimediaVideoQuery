@@ -63,7 +63,7 @@ public class ContrastStatistics {
 	}
 
 	private double getSimilarityScore(HashMap<Integer, Double> dbVideoContrast, HashMap<Integer, Double> queryContrast) {
-		double leastDiff = 99999999;
+		double leastDiff = Double.MAX_VALUE;
 		for (int i = 0; i < (dbVideoContrast.size() - queryContrast.size()); i++)
 		{
 			double curDiff = 0;
@@ -103,9 +103,9 @@ public class ContrastStatistics {
 			
 			for(int y = 0; y < Constants.HEIGHT; y++) {
 				for(int x = 0; x < Constants.WIDTH; x++) {					
-					int r = overcomeByteRangeeError(bytes[ind]);
-					int g = overcomeByteRangeeError(bytes[ind + Constants.HEIGHT * Constants.WIDTH]);
-					int b = overcomeByteRangeeError(bytes[ind + Constants.HEIGHT * Constants.WIDTH * 2]);
+					int r = overcomeByteRangeError(bytes[ind]);
+					int g = overcomeByteRangeError(bytes[ind + Constants.HEIGHT * Constants.WIDTH]);
+					int b = overcomeByteRangeError(bytes[ind + Constants.HEIGHT * Constants.WIDTH * 2]);
 					brightness += (0.2126*r + 0.7152*g  + 0.0722*b);
 					ind++;
 				}
@@ -128,7 +128,7 @@ public class ContrastStatistics {
 			return prefix;
 		}
 	}
-	public int overcomeByteRangeeError(byte b) {
+	public int overcomeByteRangeError(byte b) {
 		if(b < 0) return (int)b + 256;
 		else return (int)b;
 	}
