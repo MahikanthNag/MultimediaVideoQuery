@@ -14,8 +14,8 @@ public final class Constants {
 	public static final String BASE_DB_VIDEO_PATH = "/Users/mahikanthnag/Downloads/database_videos/";
 	public static final String BASE_QUERY_VIDEO_PATH = "/Users/mahikanthnag/Downloads/query/";
 
-	public static final String QUERY_VIDEO_NAME = "HQ4";
-	public static final String DB_VIDEO_NAME = "traffic";
+	public static final String QUERY_VIDEO_NAME = "Q5";
+	public static final String DB_VIDEO_NAME = "flowers";
 
 	public static final double COLOR_PRIORITY = 0.25;
 	public static final double AUDIO_PRIORITY = 0.25;
@@ -24,7 +24,7 @@ public final class Constants {
 
 	public static final int AUDIO_FRAME_RATE = 44100;
 	public static final int FRAME_RATE = 30;
-	public static final int FRAME_CHUNK_SIZE = 1;
+	public static final int FRAME_CHUNK_SIZE = 150;
 
 	public static final int DB_VIDEO_FRAME_SIZE = 600;
 	public static final int QUERY_VIDEO_FRAME_SIZE = 150;
