@@ -92,7 +92,7 @@ public class ContrastStatistics {
 		HashMap<Integer, Double> allFramesContrast = new HashMap<>();
 
 		for(int i = 0; i < numOFrames; i++) {
-			File file = new File(path + getFileNameSuffix(i + 1) + (i + 1) + ".rgb");
+			File file = new File(path + getFileNameSuffix(i + 1, path) + (i + 1) + ".rgb");
 			RandomAccessFile raf = new RandomAccessFile(file, "r");
 			raf.seek(0);
 			byte[] bytes = new byte[Constants.HEIGHT * Constants.WIDTH * 3];
@@ -115,13 +115,17 @@ public class ContrastStatistics {
 		return allFramesContrast;
 	}
 
-	private String getFileNameSuffix(int num) {
+	private String getFileNameSuffix(int num, String path) {
+		String prefix = "";
+		File file = new File(path + "001.rgb");
+		if (!file.exists())
+			prefix = "_";
 		if (num < 10) {
-			return "00";
+			return prefix + "00";
 		} else if (num < 100) {
-			return "0";
+			return prefix + "0";
 		} else {
-			return "";
+			return prefix;
 		}
 	}
 	public int overcomeByteRangeeError(byte b) {
