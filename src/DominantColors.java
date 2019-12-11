@@ -132,7 +132,7 @@ public class DominantColors {
 		int i;
 		colorFreqMapPerFrame = new HashMap<>();
 		for (i = 0; i < frameSize; i++) {
-			String framePath = path + getFileNameSuffix(i + 1) + (i + 1) + ".rgb";
+			String framePath = path + getFileNameSuffix(i + 1, path) + (i + 1) + ".rgb";
 			readImageRGB(Constants.WIDTH, Constants.HEIGHT, framePath, i, dominantMap);
 
 			if (i % Constants.FRAME_CHUNK_SIZE == 0 && i != 0) {
@@ -212,13 +212,17 @@ public class DominantColors {
 		return false;
 	}
 
-	private String getFileNameSuffix(int num) {
+	private String getFileNameSuffix(int num, String path) {
+		String prefix = "";
+		File file = new File(path + "001.rgb");
+		if (!file.exists())
+			prefix = "_";
 		if (num < 10) {
-			return "00";
+			return prefix + "00";
 		} else if (num < 100) {
-			return "0";
+			return prefix + "0";
 		} else {
-			return "";
+			return prefix;
 		}
 	}
 

@@ -91,7 +91,7 @@ public class MotionStatistics {
 		
 		BufferedImage prevFrame = null;		
 		for(int i = 0; i < frameSize; i++) {
-			String framePath = path + getFileNameSuffix(i + 1) + (i + 1) + ".rgb";
+			String framePath = path + getFileNameSuffix(i + 1, path) + (i + 1) + ".rgb";
 			BufferedImage curFrame = new BufferedImage(Constants.WIDTH, Constants.HEIGHT, BufferedImage.TYPE_INT_RGB);
 			readImageRGB(Constants.WIDTH, Constants.HEIGHT, framePath, curFrame);
 			
@@ -200,13 +200,17 @@ public class MotionStatistics {
 			e.printStackTrace();
 		}
 	}
-	private String getFileNameSuffix(int num) {
+	private String getFileNameSuffix(int num, String path) {
+		String prefix = "";
+		File file = new File(path + "001.rgb");
+		if (!file.exists())
+			prefix = "_";
 		if (num < 10) {
-			return "00";
+			return prefix + "00";
 		} else if (num < 100) {
-			return "0";
+			return prefix + "0";
 		} else {
-			return "";
+			return prefix;
 		}
 	}
 }

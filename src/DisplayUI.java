@@ -101,7 +101,7 @@ public class DisplayUI extends Frame implements ActionListener {
 
 		// TODO : Need to change these initial frames
 		BufferedImage initialDisplayImageFrame = getBufferedImageFromFile(
-				new File("/Users/mahikanthnag/Downloads/database_videos/flowers/flowers001.rgb"));
+				new File("E:/USC/Sem3/Multimedia/Project/database_videos/flowers/flowers001.rgb"));
 		videoIcon = new ImageIcon(initialDisplayImageFrame);
 		queryIcon = new ImageIcon(initialDisplayImageFrame);
 		videoLabel = new JLabel();
@@ -146,13 +146,17 @@ public class DisplayUI extends Frame implements ActionListener {
 		setupQueryVideo(Constants.QUERY_VIDEO_NAME);
 	}
 
-	private String getFileNameSuffix(int num) {
+	private String getFileNameSuffix(int num, String path) {
+		String prefix = "";
+		File file = new File(Constants.BASE_DB_VIDEO_PATH + path + "/" + path + "001.rgb");
+		if (!file.exists())
+			prefix = "_";
 		if (num < 10) {
-			return "00";
+			return prefix + "00";
 		} else if (num < 100) {
-			return "0";
+			return prefix + "0";
 		} else {
-			return "";
+			return prefix;
 		}
 	}
 
@@ -182,7 +186,7 @@ public class DisplayUI extends Frame implements ActionListener {
 	public void setupVideo(String path) throws IOException {
 		for (int i = 0; i < 600; i++) {
 			File file = new File(
-					Constants.BASE_DB_VIDEO_PATH + path + "/" + path + getFileNameSuffix(i + 1) + (i + 1) + ".rgb");
+					Constants.BASE_DB_VIDEO_PATH + path + "/" + path + getFileNameSuffix(i + 1, path) + (i + 1) + ".rgb");
 			BufferedImage img = getBufferedImageFromFile(file);
 			images.add(img);
 		}
@@ -193,7 +197,7 @@ public class DisplayUI extends Frame implements ActionListener {
 	public void setupQueryVideo(String path) throws IOException {
 		for (int i = 0; i < 150; i++) {
 			File file = new File(
-					Constants.BASE_QUERY_VIDEO_PATH + path + "/" + path + getFileNameSuffix(i + 1) + (i + 1) + ".rgb");
+					Constants.BASE_QUERY_VIDEO_PATH + path + "/" + path + getFileNameSuffix(i + 1, path) + (i + 1) + ".rgb");
 			BufferedImage img = getBufferedImageFromFile(file);
 			queryImages.add(img);
 		}
