@@ -47,7 +47,7 @@ public class ContrastStatistics {
 	}
 
 	private double getSimilarityScore(double avgContrast, double avgQueryContrast) {
-		return  Constants.CONTRAST_PRIORITY * Math.min(avgContrast, avgQueryContrast) * 100 / Math.max(avgContrast, avgQueryContrast);
+		return  Constants.CONTRAST_PRIORITY * (100 - Math.abs(avgContrast - avgQueryContrast) / Math.max(avgContrast, avgQueryContrast)*100);
 	}
 
 	private double findAverageContrastOfAllFrames(String path, int type) throws IOException {

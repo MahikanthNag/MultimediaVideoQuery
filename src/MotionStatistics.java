@@ -15,14 +15,30 @@ public class MotionStatistics {
 	Map<String, Double> similarities = new HashMap<>();
 
 	public Map<String, Double> calculateStatsOfAllPairs(String queryPath) throws ClassNotFoundException, IOException {
-		similarities.put("flowers", calculateStats("flowers", queryPath));
-		similarities.put("interview", calculateStats("interview", queryPath));
-		similarities.put("movie", calculateStats("movie", queryPath));
-		similarities.put("musicvideo", calculateStats("musicvideo", queryPath));
-		similarities.put("sports", calculateStats("sports", queryPath));
-		similarities.put("starcraft", calculateStats("starcraft", queryPath));
-		similarities.put("traffic", calculateStats("traffic", queryPath));
+		Map<Integer, Double> distances = new HashMap<>();
+		String[] videoNames = {"flowers", "interview", "movie", "musicvideo", "sports", "starcraft", "traffic"};
+		distances.put(0, calculateStats("flowers", queryPath));
+		distances.put(1, calculateStats("interview", queryPath));
+		distances.put(2, calculateStats("movie", queryPath));
+		distances.put(3, calculateStats("musicvideo", queryPath));
+		distances.put(4, calculateStats("sports", queryPath));
+		distances.put(5, calculateStats("starcraft", queryPath));
+		distances.put(6, calculateStats("traffic", queryPath));
 		
+		double maxDist = 0, minDist = 9999999;
+		for (int i = 0; i < distances.size(); i++)
+		{
+			double val = distances.get(i);
+			if (val < minDist)
+				minDist = val;
+			if (val > maxDist)
+				maxDist = val;
+		}
+		for (int i = 0; i < distances.size(); i++)
+		{
+			double simVal = 100 - ((distances.get(i) - minDist)/(maxDist - minDist)*100);
+			similarities.put(videoNames[i], Constants.MOTION_VECTOR_PRIORITY * simVal);
+		}
 		return similarities;
 	}
 	
@@ -39,7 +55,20 @@ public class MotionStatistics {
 	}
 	
 	private double getSimilarityScore(HashMap<Integer, Integer> dbMotionStatistics, HashMap<Integer, Integer> dominantMotionInQuery) {
-		return Constants.MOTION_VECTOR_PRIORITY * 100.0;
+		double leastDiff = 99999999;
+		for (int i = 0; i < (dbMotionStatistics.size()-dominantMotionInQuery.size()); i++)
+		{
+			double curDiff = 0;
+			for (int j = 0; j < dominantMotionInQuery.size(); j++)
+			{
+				curDiff += Math.abs(dbMotionStatistics.get(i+j) - dominantMotionInQuery.get(j))/1000;
+			}
+			if (curDiff < leastDiff)
+			{
+				leastDiff = curDiff;
+			}
+		}
+		return leastDiff;
 	}
 
 	public void caluculateAndSerializeMotionValue(String path) throws IOException {
@@ -127,7 +156,6 @@ public class MotionStatistics {
 			imageDiff += d;
 			total ++;
 		}
-		imageDiff = imageDiff / total;
 //		System.out.println("Image difference " + imageDiff);
 
 		return (int)imageDiff;
