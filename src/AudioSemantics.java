@@ -115,7 +115,7 @@ public class AudioSemantics {
         
         Entry<Integer, Double> maxError = calculateMaxEntry(errorValues);
         for(Entry<Integer, Double> entry : errorValues.entrySet()) {
-        	framewiseAudioValues.put(entry.getKey(), 100 - (entry.getValue()/maxError.getValue())*100);
+        	framewiseAudioValues.put(entry.getKey(), (100 - (entry.getValue()/maxError.getValue())*100)*Constants.AUDIO_PRIORITY);
         }
         
         
