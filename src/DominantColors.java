@@ -19,9 +19,10 @@ public class DominantColors {
 
 	Map<String, Double> similarities = new HashMap<>();
 	Map<Integer, List<String>> dominantColorMapPerChunk = new HashMap<>();
-	Map<String, Double> frameWiseSimilarity = new HashMap<>();
+	Map<Integer, Double> frameWiseSimilarity = new HashMap<>();
 	Map<Integer, Map<String, Integer>> colorFreqMapPerFrame = new HashMap<>();
 	Map<Integer, Map<String, Integer>> colorFreqMapPerFrameForDB = new HashMap<>();
+	Map<String, Map<Integer, Double>> videoWiseFrameSimilarity = new HashMap<>();
 
 	public Map<String, Double> calculateStatsOfAllPairs(String queryPath) throws ClassNotFoundException, IOException {
 		similarities.put("flowers", calculateStats("flowers", queryPath));
@@ -55,14 +56,15 @@ public class DominantColors {
 				Constants.BASE_QUERY_VIDEO_PATH + queryPath + "/" + queryPath, 1);
 		iis.close();
 
-		return getSimilarityScore(dominantColorMapPerDBFrame, dominantColorMapPerQueryFrame);
+		return getSimilarityScore(dominantColorMapPerDBFrame, dominantColorMapPerQueryFrame, path);
 	}
 
 	private double getSimilarityScore(Map<Integer, List<String>> dominantColorMapPerDBFrame,
-			Map<Integer, List<String>> dominantColorMapPerQueryFrame) {
+			Map<Integer, List<String>> dominantColorMapPerQueryFrame, String queryPath) {
 
 		int numOfIterations = 0;
-		frameWiseSimilarity = new HashMap<>();
+		initializeFrameMap(frameWiseSimilarity);
+		
 		for (int i = 0; i < Constants.QUERY_VIDEO_FRAME_SIZE; i += Constants.FRAME_CHUNK_SIZE) {
 			Set<String> dominantColorsInQuery = new HashSet<>();
 			Set<String> dominantColorsInDb = new HashSet<>();
@@ -71,9 +73,10 @@ public class DominantColors {
 
 			double similarity = Double.MIN_VALUE;
 			int maxSimilarityStartFrame = 0;
-			double total = (double) colorFreqMapPerFrame.get(i).values().stream().reduce(0, Integer::sum);
-
+//			double total = (double) colorFreqMapPerFrame.get(i).values().stream().reduce(0, Integer::sum);
+			double total = 0.0;
 			for (int j = 0; j < Constants.DB_VIDEO_FRAME_SIZE; j += Constants.FRAME_CHUNK_SIZE) {
+				total = 0;
 				dominantColorsInDb = new HashSet<>();
 				dominantColorsInDb.addAll(dominantColorMapPerDBFrame.get(j));
 
@@ -83,23 +86,35 @@ public class DominantColors {
 					if (dominantColorsInQuery.contains((String) temp[k])) {
 						int freq = Math.min(colorFreqMapPerFrame.get(i).get((String) temp[k])
 								, colorFreqMapPerFrameForDB.get(j).get((String)temp[k]));
+						total += Math.max(colorFreqMapPerFrame.get(i).get((String) temp[k])
+								, colorFreqMapPerFrameForDB.get(j).get((String)temp[k]));
 						count = count + freq;
 					}
+					total += colorFreqMapPerFrameForDB.get(j).get((String)temp[k]);
 				}
 //				double currentSimilarity = (double)count;
-				double currentSimilarity = count / total;
+				double currentSimilarity = count/total;
 				if (similarity < currentSimilarity) {
 					similarity = currentSimilarity;
 					maxSimilarityStartFrame = j;
 				}
 			}
-
-			frameWiseSimilarity.put(i+"_"+maxSimilarityStartFrame, similarity);
-			numOfIterations++;
+			frameWiseSimilarity.put(maxSimilarityStartFrame, frameWiseSimilarity.getOrDefault(maxSimilarityStartFrame, 0.0) + similarity);
+//			frameWiseSimilarity.put(maxSimilarityStartFrame+1, frameWiseSimilarity.getOrDefault(maxSimilarityStartFrame + 1, 0.0) + similarity);
+//			frameWiseSimilarity.put(maxSimilarityStartFrame+2, frameWiseSimilarity.getOrDefault(maxSimilarityStartFrame + 2, 0.0) + similarity);
+			if(similarity != 0)
+				numOfIterations++;
 		}
-
+		
+		videoWiseFrameSimilarity.put(queryPath, frameWiseSimilarity);
 		double sum = frameWiseSimilarity.values().stream().reduce(0.0, Double::sum);
 		return Constants.COLOR_PRIORITY * 100 * sum / numOfIterations;
+	}
+
+	private void initializeFrameMap(Map<Integer, Double> frameWiseSimilarity) {
+		for(int i = 0; i < 600; i++) {
+			frameWiseSimilarity.put(i,  0.0);
+		}
 	}
 
 	public void caluculateAndSerializeColorValue(String path) throws IOException {
