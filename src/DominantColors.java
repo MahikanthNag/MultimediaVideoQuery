@@ -99,7 +99,7 @@ public class DominantColors {
 		}
 
 		double sum = frameWiseSimilarity.values().stream().reduce(0.0, Double::sum);
-		return Constants.COLOR_PRIORITY * sum / numOfIterations;
+		return Constants.COLOR_PRIORITY * 100 * sum / numOfIterations;
 	}
 
 	public void caluculateAndSerializeColorValue(String path) throws IOException {
@@ -170,7 +170,7 @@ public class DominantColors {
 				int r = overcomeByteRangeError(bytes[ind]);
 				int g = overcomeByteRangeError(bytes[ind + height * width]);
 				int b = overcomeByteRangeError(bytes[ind + height * width * 2]);
-				String key = (int) (r / 32) + "_" + (int) (g / 32) + "_" + (int) (b / 32);
+				String key = (int) (r / 64) + "_" + (int) (g / 64) + "_" + (int) (b / 64);
 				dominantMap.put(key, dominantMap.getOrDefault(key, 0) + 1);
 				ind++;
 			}
