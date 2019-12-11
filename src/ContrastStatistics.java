@@ -14,43 +14,72 @@ public class ContrastStatistics {
 	Map<String, Double> similarities = new HashMap<>();
 	
 	public Map<String, Double> calculateStatsOfAllPairs(String queryPath) throws ClassNotFoundException, IOException {
-		similarities.put("flowers", calculateStats("flowers", queryPath));
-		similarities.put("interview", calculateStats("interview", queryPath));
-		similarities.put("movie", calculateStats("movie", queryPath));
-		similarities.put("musicvideo", calculateStats("musicvideo", queryPath));
-		similarities.put("sports", calculateStats("sports", queryPath));
-		similarities.put("starcraft", calculateStats("starcraft", queryPath));
-		similarities.put("traffic", calculateStats("traffic", queryPath));
+		Map<Integer, Double> distances = new HashMap<>();
+		String[] videoNames = {"flowers", "interview", "movie", "musicvideo", "sports", "starcraft", "traffic"};
+		distances.put(0, calculateStats("flowers", queryPath));
+		distances.put(1, calculateStats("interview", queryPath));
+		distances.put(2, calculateStats("movie", queryPath));
+		distances.put(3, calculateStats("musicvideo", queryPath));
+		distances.put(4, calculateStats("sports", queryPath));
+		distances.put(5, calculateStats("starcraft", queryPath));
+		distances.put(6, calculateStats("traffic", queryPath));
 		
+		double maxDist = 0, minDist = 9999999;
+		for (int i = 0; i < distances.size(); i++)
+		{
+			double val = distances.get(i);
+			if (val < minDist)
+				minDist = val;
+			if (val > maxDist)
+				maxDist = val;
+		}
+		for (int i = 0; i < distances.size(); i++)
+		{
+			double simVal = 100 - ((distances.get(i) - minDist)/(maxDist - minDist)*100);
+			similarities.put(videoNames[i], Constants.CONTRAST_PRIORITY * simVal);
+		}
 		return similarities;
 	}
 	
 	public double calculateStats(String path, String queryPath) throws IOException, ClassNotFoundException {		
 		FileInputStream fis = new FileInputStream(Constants.BASE_DB_VIDEO_PATH + "serialized_video_data/" + path + "_contrast.txt");
         ObjectInputStream iis = new ObjectInputStream(fis);
-        double avgContrast = (double) iis.readObject();
+        HashMap<Integer, Double> dbVideoContrast = (HashMap<Integer, Double>) iis.readObject();
         
-		double avgQueryContrast = findAverageContrastOfAllFrames(Constants.BASE_QUERY_VIDEO_PATH + queryPath + "/" + queryPath, 1);
+        HashMap<Integer, Double> queryContrast = findContrastOfAllFrames(Constants.BASE_QUERY_VIDEO_PATH + queryPath + "/" + queryPath, 1);
 		iis.close();
 		
-		return getSimilarityScore(avgContrast, avgQueryContrast);		
+		return getSimilarityScore(dbVideoContrast, queryContrast);		
 	}
 
 	public void caluculateAndSerializeContrastValue(String path) throws IOException, FileNotFoundException {
-		double avgContrast = findAverageContrastOfAllFrames(Constants.BASE_DB_VIDEO_PATH + path + "/" + path, 0);
+		HashMap<Integer, Double> framewistContrastStatistics = findContrastOfAllFrames(Constants.BASE_DB_VIDEO_PATH + path + "/" + path, 0);
 		
 		FileOutputStream fos = new FileOutputStream(Constants.BASE_DB_VIDEO_PATH + "serialized_video_data/" + path + "_contrast.txt");
         ObjectOutputStream oos = new ObjectOutputStream(fos);
-        oos.writeObject(avgContrast);
+        oos.writeObject(framewistContrastStatistics);
         
         oos.close();
 	}
 
-	private double getSimilarityScore(double avgContrast, double avgQueryContrast) {
-		return  Constants.CONTRAST_PRIORITY * (100 - Math.abs(avgContrast - avgQueryContrast) / Math.max(avgContrast, avgQueryContrast)*100);
+	private double getSimilarityScore(HashMap<Integer, Double> dbVideoContrast, HashMap<Integer, Double> queryContrast) {
+		double leastDiff = 99999999;
+		for (int i = 0; i < (dbVideoContrast.size() - queryContrast.size()); i++)
+		{
+			double curDiff = 0;
+			for (int j = 0; j < queryContrast.size(); j++)
+			{
+				curDiff += Math.abs(dbVideoContrast.get(i+j) - queryContrast.get(j));
+			}
+			if (curDiff < leastDiff)
+			{
+				leastDiff = curDiff;
+			}
+		}
+		return leastDiff;
 	}
 
-	private double findAverageContrastOfAllFrames(String path, int type) throws IOException {
+	private HashMap<Integer, Double> findContrastOfAllFrames(String path, int type) throws IOException {
 		int numOFrames  = 0;
 		
 		if(type == 0) {
@@ -58,10 +87,9 @@ public class ContrastStatistics {
 		}
 		else {
 			numOFrames = 150;
-		}
-		
-		double totalBrightnessOfAllFrames = 0;
-		double averageContrast = 0;
+		}		
+
+		HashMap<Integer, Double> allFramesContrast = new HashMap<>();
 
 		for(int i = 0; i < numOFrames; i++) {
 			File file = new File(path + getFileNameSuffix(i + 1) + (i + 1) + ".rgb");
@@ -82,10 +110,9 @@ public class ContrastStatistics {
 					ind++;
 				}
 			}
-			totalBrightnessOfAllFrames += brightness / (Constants.HEIGHT * Constants.WIDTH);			
+			allFramesContrast.put(i, brightness / (Constants.HEIGHT * Constants.WIDTH));		
 		}
-		averageContrast = totalBrightnessOfAllFrames / numOFrames;
-		return averageContrast;
+		return allFramesContrast;
 	}
 
 	private String getFileNameSuffix(int num) {
