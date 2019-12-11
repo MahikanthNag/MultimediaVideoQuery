@@ -20,6 +20,10 @@ public class AudioSemantics {
 	private int minValue = Integer.MAX_VALUE;
 	private int maxValue = Integer.MIN_VALUE;
 	ArrayList<Double> audioVariance;
+	Map<Integer, Double> errorValues = new HashMap<>();
+	
+	
+	public Map<Integer, Double> framewiseAudioValues = new HashMap<>();
 	private int frameLength = 10;
 	
 	Map<String, Double> similarities = new HashMap<>();
@@ -36,6 +40,7 @@ public class AudioSemantics {
 		distances.put(6, calculateSimilarity("traffic", queryPath));
 		
 		double maxDist = 0, minDist = Double.MAX_VALUE;
+
 		for (int i = 0; i < distances.size(); i++)
 		{
 			double val = distances.get(i);
@@ -64,27 +69,29 @@ public class AudioSemantics {
 			byte[] audioBuffer = new byte[totalSize];
 			
 			int readBytes = 0;
-			int framesRead = 0;
-			ArrayList<Integer> frameValues = new ArrayList<>();
+			double framesRead = 0;
+			ArrayList<Double> frameValues = new ArrayList<>();
 			ArrayList<Double> frameValuesWithRespectToVideo = new ArrayList<>();
 
-			readBytes = audioInputStream.read(audioBuffer, 0, audioBuffer.length);
-			framesRead += readBytes/audioFormat.getFrameSize();
-			
-			for(int i = 0; i < readBytes; i++) {
-//				double value = (double) ((audioBuffer[i * 2] & 0xff) + (audioBuffer[i * 2 + 1] << 8));
-				frameValues.add(overcomeByteRangeeError(audioBuffer[i]));
+			while((readBytes = audioInputStream.read(audioBuffer, 0, audioBuffer.length)) != -1) {
+				readBytes = readBytes/audioFormat.getFrameSize();
+				framesRead += readBytes;
 			}
 			
-			int ratio = Constants.AUDIO_FRAME_RATE / 60; 
+			for(int i = 0; i < framesRead; i++) {
+				double value = (double) ((audioBuffer[i * 2] & 0xff) + (audioBuffer[i * 2 + 1] << 8));
+				frameValues.add(value);
+			}
 			
-			int lengthOfAudio = readBytes / Constants.AUDIO_FRAME_RATE * 60;
-            for (int i = 0; i < lengthOfAudio; i++) {
+			int ratio = (int)audioFormat.getFrameRate() / 30; 
+			
+			int lengthOfAudio =(int) Math.ceil(framesRead /(audioFormat.getFrameRate()) * 30);
+            for (int i = 0; i < lengthOfAudio - 1; i++) {
                 double sum = 0;
                 for (int j = 0; j < ratio; j++) {
-                    sum += frameValues.get(i * ratio + j);
+                    sum += Math.abs(frameValues.get(i * ratio + j));
                 }
-                frameValuesWithRespectToVideo.add(sum);
+                frameValuesWithRespectToVideo.add((sum));
             }
 			
 			return frameValuesWithRespectToVideo;
@@ -106,54 +113,78 @@ public class AudioSemantics {
 		
         Entry<Integer, Double> minError = calculateMinError(queryFrames, databaseAudioFrames);
         
+        Entry<Integer, Double> maxError = calculateMaxEntry(errorValues);
+        for(Entry<Integer, Double> entry : errorValues.entrySet()) {
+        	framewiseAudioValues.put(entry.getKey(), 100 - (entry.getValue()/maxError.getValue())*100);
+        }
+        
+        
 //        double matchPercentage = 100 - Math.round(minError.getValue()*10000.0)/100.0;
         
-		return Constants.AUDIO_PRIORITY * minError.getValue();
+		return minError.getValue();
 				
  		
 	}
 	
 	public Entry<Integer, Double> calculateMinError(ArrayList<Double> queryFrames, ArrayList<Double> databaseAudioFrames) {
-		
-		Map<Integer, Double> errorValues = new HashMap<>();
-//		for(int i = 0; i < databaseAudioFrames.size() - queryFrames.size(); i++) {
-//			double sum = 0.0;
-//			double databaseSum = 0.0;
-//			for(int j = 0; j < queryFrames.size(); j++) {
-//				sum += Math.abs(databaseAudioFrames.get(i + j) - queryFrames.get(j));
-//				databaseSum += Math.abs(databaseAudioFrames.get(i + j));
-//			}
-//			errorValues.put(i, Math.min(sum, databaseSum)/Math.max(sum, databaseSum));
-//		}
-		int chunckSize = 100;
-		for(int i = 0; i < queryFrames.size() - chunckSize; i++) {
-			ArrayList<Double> chunkOfQueryFrame = new ArrayList<Double>(queryFrames.subList(i, i + chunckSize));
-			double minVal = Integer.MAX_VALUE;
-			for(int j = 0; j < databaseAudioFrames.size() - chunckSize; j++) {
-				ArrayList<Double> chunkOfDBFrame = new ArrayList<Double>(databaseAudioFrames.subList(j, j + chunckSize));
-				double sum = 0.0;
-				for(int k = 0; k < chunckSize; k++) {
-					sum += Math.abs(chunkOfQueryFrame.get(k) - chunkOfDBFrame.get(k));
-				}
-				if(sum < minVal) {
-					minVal = sum;
-				}
+		for(int i = 0; i < databaseAudioFrames.size() - queryFrames.size(); i++) {
+			double sum = 0.0;
+			for(int j = 0; j < queryFrames.size(); j++) {
+				sum += Math.abs(databaseAudioFrames.get(i + j) - queryFrames.get(j));
 			}
-			errorValues.put(i, minVal);
+			
+			errorValues.put(i, Math.abs(sum));
 		}
+//		int chunckSize = 35;
+//		Map<Integer, Integer> minCount = new HashMap<>();
+//		for(int i = 0; i < queryFrames.size() - chunckSize; i++) {
+//			ArrayList<Double> chunkOfQueryFrame = new ArrayList<Double>(queryFrames.subList(i, i + chunckSize));
+//			double minVal = Integer.MAX_VALUE;
+//			int frameNo = 0;
+//			for(int j = 0; j < databaseAudioFrames.size() - chunckSize; j++) {
+//				ArrayList<Double> chunkOfDBFrame = new ArrayList<Double>(databaseAudioFrames.subList(j, j + chunckSize));
+//				double sum = 0.0;
+//				for(int k = 0; k < chunckSize; k++) {
+//					sum += Math.abs(chunkOfDBFrame.get(k) - chunkOfQueryFrame.get(k));
+//				}
+//				
+//				if(sum < minVal) {
+//					minVal = sum;
+//					frameNo = j;
+//				}
+//			}
+//			if(errorValues.get(frameNo) == null) {
+//				errorValues.put(frameNo, Math.abs(minVal));
+//				minCount.put(frameNo, 1);
+//			}
+//			else {
+//				errorValues.put(frameNo, errorValues.get(frameNo) + Math.abs(minVal));
+//				minCount.put(frameNo, minCount.get(frameNo) + 1);
+//			}
+//		}
 		
 		
 		return calculateMinEntry(errorValues);
 	}
 
-	private Entry<Integer, Double> calculateMinEntry(Map<Integer, Double> errorValues) {
+	private Entry<Integer, Double> calculateMinEntry(Map<Integer, Double> values) {
 		Entry<Integer, Double> min = null;
-		for(Entry<Integer, Double> entry : errorValues.entrySet()) {
+		for(Entry<Integer, Double> entry : values.entrySet()) {
 		    if (min == null || min.getValue() > entry.getValue()) {
 		        min = entry;
 		    }
 		}
 		return min;
+	}
+	
+	private Entry<Integer, Double> calculateMaxEntry(Map<Integer, Double> values) {
+		Entry<Integer, Double> max = null;
+		for(Entry<Integer, Double> entry : values.entrySet()) {
+		    if (max == null || max.getValue() < entry.getValue()) {
+		        max = entry;
+		    }
+		}
+		return max;
 	}
 
 	public void caluculateAndSerializeColorValue(String path) throws IOException {
