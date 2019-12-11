@@ -1,21 +1,13 @@
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-import java.nio.ByteBuffer;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -43,7 +35,7 @@ public class AudioSemantics {
 		distances.put(5, calculateSimilarity("starcraft", queryPath));
 		distances.put(6, calculateSimilarity("traffic", queryPath));
 		
-		double maxDist = 0, minDist = 9999999;
+		double maxDist = 0, minDist = Double.MAX_VALUE;
 		for (int i = 0; i < distances.size(); i++)
 		{
 			double val = distances.get(i);
@@ -54,7 +46,7 @@ public class AudioSemantics {
 		}
 		for (int i = 0; i < distances.size(); i++)
 		{
-			double simVal = 100 - ((distances.get(i) - minDist)/(maxDist - minDist)*100);
+			double simVal = (100 - ((distances.get(i) - minDist)/(maxDist - minDist)*100))*0.9;
 			similarities.put(videoNames[i], Constants.CONTRAST_PRIORITY * simVal);
 		}
 		return similarities;

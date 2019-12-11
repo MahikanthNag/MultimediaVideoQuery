@@ -24,7 +24,7 @@ public class ContrastStatistics {
 		distances.put(5, calculateStats("starcraft", queryPath));
 		distances.put(6, calculateStats("traffic", queryPath));
 		
-		double maxDist = 0, minDist = 9999999;
+		double maxDist = 0, minDist = Double.MAX_VALUE;
 		for (int i = 0; i < distances.size(); i++)
 		{
 			double val = distances.get(i);
@@ -35,7 +35,7 @@ public class ContrastStatistics {
 		}
 		for (int i = 0; i < distances.size(); i++)
 		{
-			double simVal = 100 - ((distances.get(i) - minDist)/(maxDist - minDist)*100);
+			double simVal = (100 - ((distances.get(i) - minDist)/(maxDist - minDist)*100))*0.9;
 			similarities.put(videoNames[i], Constants.CONTRAST_PRIORITY * simVal);
 		}
 		return similarities;
