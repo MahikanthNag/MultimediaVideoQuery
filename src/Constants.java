@@ -28,5 +28,4 @@ public final class Constants {
 
 	public static final int DB_VIDEO_FRAME_SIZE = 600;
 	public static final int QUERY_VIDEO_FRAME_SIZE = 150;
->>>>>>> 6eb2f0736e9240a78c96baa5f2174e240e9db641
 }
