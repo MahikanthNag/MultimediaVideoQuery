@@ -75,8 +75,7 @@ public class DominantColors {
 			int maxSimilarityStartFrame = 0;
 //			double total = (double) colorFreqMapPerFrame.get(i).values().stream().reduce(0, Integer::sum);
 			double total = 0.0;
-			for (int j = 0; j < Constants.DB_VIDEO_FRAME_SIZE; j += Constants.FRAME_CHUNK_SIZE) {
-				total = 0;
+			for (int j = 0; j < Constants.DB_VIDEO_FRAME_SIZE - Constants.FRAME_CHUNK_SIZE; j++) {
 				dominantColorsInDb = new HashSet<>();
 				dominantColorsInDb.addAll(dominantColorMapPerDBFrame.get(j));
 
@@ -90,16 +89,19 @@ public class DominantColors {
 								, colorFreqMapPerFrameForDB.get(j).get((String)temp[k]));
 						count = count + freq;
 					}
-					total += colorFreqMapPerFrameForDB.get(j).get((String)temp[k]);
+//					total += colorFreqMapPerFrameForDB.get(j).get((String)temp[k]);
 				}
-//				double currentSimilarity = (double)count;
-				double currentSimilarity = count/total;
+//				double currentSimilarity = (double)count;				
+				double currentSimilarity = count == 0 && total == 0 ? 0.0 : count / total;
 				if (similarity < currentSimilarity) {
 					similarity = currentSimilarity;
 					maxSimilarityStartFrame = j;
 				}
-			}
-			frameWiseSimilarity.put(maxSimilarityStartFrame, frameWiseSimilarity.getOrDefault(maxSimilarityStartFrame, 0.0) + similarity);
+				frameWiseSimilarity.put(j, currentSimilarity);
+			}			
+//			for(int j = 0; j < Constants.FRAME_CHUNK_SIZE; j++) {
+//				frameWiseSimilarity.put(maxSimilarityStartFrame + j, frameWiseSimilarity.getOrDefault(maxSimilarityStartFrame, 0.0) + similarity);				
+//			}			
 //			frameWiseSimilarity.put(maxSimilarityStartFrame+1, frameWiseSimilarity.getOrDefault(maxSimilarityStartFrame + 1, 0.0) + similarity);
 //			frameWiseSimilarity.put(maxSimilarityStartFrame+2, frameWiseSimilarity.getOrDefault(maxSimilarityStartFrame + 2, 0.0) + similarity);
 			if(similarity != 0)
@@ -107,8 +109,9 @@ public class DominantColors {
 		}
 		
 		videoWiseFrameSimilarity.put(queryPath, frameWiseSimilarity);
-		double sum = frameWiseSimilarity.values().stream().reduce(0.0, Double::sum);
-		return Constants.COLOR_PRIORITY * 100 * sum / numOfIterations;
+		double sum = frameWiseSimilarity.values().stream().reduce(0.0, Double::sum) / Constants.FRAME_CHUNK_SIZE;
+		frameWiseSimilarity.replaceAll((k, v) -> v * 25);
+		return Constants.COLOR_PRIORITY * 100 * 25 * sum / numOfIterations;
 	}
 
 	private void initializeFrameMap(Map<Integer, Double> frameWiseSimilarity) {
@@ -143,32 +146,53 @@ public class DominantColors {
 
 		dominantColorMapPerChunk = new HashMap<>();
 		List<String> dominantColors = new ArrayList<>();
-		Map<String, Integer> dominantMap = new HashMap<>();
+		
+		Map<Integer, Map<String, Integer>> dominantMap = new HashMap<>();
+		for(int i = 0; i < frameSize; i++) {
+			dominantMap.put(i, new HashMap<>()); 
+		}
+		
 		int i;
 		colorFreqMapPerFrame = new HashMap<>();
 		for (i = 0; i < frameSize; i++) {
-			String framePath = path + getFileNameSuffix(i + 1, path) + (i + 1) + ".rgb";
-			readImageRGB(Constants.WIDTH, Constants.HEIGHT, framePath, i, dominantMap);
+			String framePath = path + getFileNameSuffix(i + 1, path) + (i + 1) + ".rgb";			
 
-			if (i % Constants.FRAME_CHUNK_SIZE == 0 && i != 0) {
-				getDominantColors(dominantMap, dominantColors);
+			if (i >= Constants.FRAME_CHUNK_SIZE) {				
+				Map<String, Integer> temp = new HashMap<>();
+				for(int j = i - Constants.FRAME_CHUNK_SIZE; j < i; j++) {
+					temp.putAll(dominantMap.get(j));
+				}
+				getDominantColors(temp, dominantColors);
 				dominantColorMapPerChunk.put(i - Constants.FRAME_CHUNK_SIZE, dominantColors);
 				dominantColors = new ArrayList<>();
-				colorFreqMapPerFrame.put(i - Constants.FRAME_CHUNK_SIZE, dominantMap);
-				dominantMap = new HashMap<>();
+				colorFreqMapPerFrame.put(i - Constants.FRAME_CHUNK_SIZE, temp);
+//				dominantMap.remove(i - Constants.FRAME_CHUNK_SIZE);
 			}
+			readImageRGB(Constants.WIDTH, Constants.HEIGHT, framePath, i, dominantMap);
 		}
-		if (i == frameSize) {
-			getDominantColors(dominantMap, dominantColors);
+		if(i == 150) {
+			Map<String, Integer> temp = new HashMap<>();
+			for(int j = i - Constants.FRAME_CHUNK_SIZE; j < i; j++) {
+				temp.putAll(dominantMap.get(j));
+			}
+			getDominantColors(temp, dominantColors);
 			dominantColorMapPerChunk.put(i - Constants.FRAME_CHUNK_SIZE, dominantColors);
 			dominantColors = new ArrayList<>();
-			colorFreqMapPerFrame.put(i - Constants.FRAME_CHUNK_SIZE, dominantMap);
-			dominantMap = new HashMap<>();
+			colorFreqMapPerFrame.put(i - Constants.FRAME_CHUNK_SIZE, temp);
+//			dominantMap.remove(i - Constants.FRAME_CHUNK_SIZE);
 		}
+		
+//		if (i == frameSize) {
+//			getDominantColors(dominantMap, dominantColors);
+//			dominantColorMapPerChunk.put(i - Constants.FRAME_CHUNK_SIZE, dominantColors);
+//			dominantColors = new ArrayList<>();
+//			colorFreqMapPerFrame.put(i - Constants.FRAME_CHUNK_SIZE, dominantMap);
+//			dominantMap = new HashMap<>();
+//		}
 		return dominantColorMapPerChunk;
 	}
 
-	public void readImageRGB(int width, int height, String path, int frameNum, Map<String, Integer> dominantMap)
+	public void readImageRGB(int width, int height, String path, int frameNum, Map<Integer, Map<String, Integer>> dominantMap)
 			throws IOException {
 		byte[] bytes = new byte[Constants.HEIGHT * Constants.WIDTH * 3];
 
@@ -185,8 +209,8 @@ public class DominantColors {
 				int r = overcomeByteRangeError(bytes[ind]);
 				int g = overcomeByteRangeError(bytes[ind + height * width]);
 				int b = overcomeByteRangeError(bytes[ind + height * width * 2]);
-				String key = (int) (r / 64) + "_" + (int) (g / 64) + "_" + (int) (b / 64);
-				dominantMap.put(key, dominantMap.getOrDefault(key, 0) + 1);
+				String key = (int) (r / 16) + "_" + (int) (g / 16) + "_" + (int) (b / 16);
+				dominantMap.get(frameNum).put(key, dominantMap.get(frameNum).getOrDefault(key, 0) + 1);
 				ind++;
 			}
 		}
