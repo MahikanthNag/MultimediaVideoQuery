@@ -130,7 +130,7 @@ public class AudioSemantics {
         Entry<Integer, Double> minError = calculateMinEntry(minErrorValues);
         
         // calculating the graph values 
-        ArrayList<Double> graphValues = new ArrayList<>(databaseAudioFrames.subList(minError.getKey(), minError.getKey() + 150));
+        ArrayList<Double> graphValues = new ArrayList<>(databaseAudioFrames.subList(minError.getKey(), Math.min(minError.getKey() + 150, 600)));
         calculateGraphValues(graphValues, queryFrames, minError.getKey(), databaseAudioPath);
         
         // calculating percentage

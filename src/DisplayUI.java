@@ -493,9 +493,9 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 			colorMap = ui.dominantColors.videoWiseFrameSimilarity;
 			System.out.println("After color");
 
-//			ui.motionSimilarity = ui.motionStatistics.calculateStatsOfAllPairs(Constants.QUERY_VIDEO_NAME);
-//			motionMap = ui.motionStatistics.getGraphMappingForAllVideos(Constants.QUERY_VIDEO_NAME);
-//			System.out.println("After motion");
+			ui.motionSimilarity = ui.motionStatistics.calculateStatsOfAllPairs(Constants.QUERY_VIDEO_NAME);
+			motionMap = ui.motionStatistics.getGraphMappingForAllVideos(Constants.QUERY_VIDEO_NAME);
+			System.out.println("After motion");
 
 			ui.totalSimilarity("flowers");
 			ui.totalSimilarity("interview");
@@ -530,12 +530,13 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 		HashMap<Integer, Double> selectedContrastMap = contrastMap.get(currentdbVideoName);
 		HashMap<Integer, Double> selectedColorMap = colorMap.get(currentdbVideoName);
 		HashMap<Integer, Double> selectedAudioMap = audioMap.get(currentdbVideoName);
-//		HashMap<Integer, Double> selectedMotionMap = motionMap.get(currentdbVideoName);
+		HashMap<Integer, Double> selectedMotionMap = motionMap.get(currentdbVideoName);
+		
 		initializeFrameMap(aggregatedGraphMap);
 		aggregatedGraphMap = merge(aggregatedGraphMap, selectedContrastMap);
 		aggregatedGraphMap = merge(aggregatedGraphMap, selectedColorMap);
 		aggregatedGraphMap = merge(aggregatedGraphMap, selectedAudioMap);
-//		aggregatedGraphMap = merge(aggregatedGraphMap, selectedContrastMap);
+		aggregatedGraphMap = merge(aggregatedGraphMap, selectedMotionMap);
 
 //		aggregatedGraphMap.forEach((k, v) -> selectedContrastMap.merge(k, v, (v1, v2) -> v1 + v2));
 //		aggregatedGraphMap.forEach((k, v) -> selectedColorMap.merge(k, v, (v1, v2) -> v1 + v2));
@@ -547,9 +548,9 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 	}
 
 	public void totalSimilarity(String query) {
-//		double totalSimilarity = contrastSimilarity.get(query) + audioSimilarity.get(query) + colorSimilarity.get(query)
-//				+ motionSimilarity.get(query);
-		double totalSimilarity = colorSimilarity.get(query) + contrastSimilarity.get(query) + audioSimilarity.get(query);
+		double totalSimilarity = contrastSimilarity.get(query) + audioSimilarity.get(query) + colorSimilarity.get(query)
+				+ motionSimilarity.get(query);
+//		double totalSimilarity = colorSimilarity.get(query) + contrastSimilarity.get(query) + audioSimilarity.get(query);
 
 		aggregateRankingMap.put(query, totalSimilarity);
 	}
@@ -575,7 +576,7 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 		}
 	}
 
-	public void initializePanel() {
+	public void initializePanel() throws IOException {
 		String[] topMatches = new String[3];
 		getTop3VideosArray(topMatches);
 
@@ -586,9 +587,22 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 		repaint();
 	}
 
-	private void getTop3VideosArray(String[] topMatches) {
+	private void getTop3VideosArray(String[] topMatches) throws IOException {
 		int i = 0;
 		for (Map.Entry<String, Double> entry : aggregateRankingMap.entrySet()) {
+			if(i == 0) {
+				BufferedImage initialDisplayImageFrame = getBufferedImageFromFile(
+						new File(Constants.BASE_DB_VIDEO_PATH + entry.getKey() + "/" + entry.getKey() + "001.rgb"));
+				videoPanel.remove(videoLabel);
+				videoIcon.setImage(initialDisplayImageFrame);
+				videoLabel.setIcon(videoIcon);
+				videoPanel.add(videoLabel);
+				repaint();
+				currentdbVideoName = entry.getKey();
+				setupVideo(currentdbVideoName);				
+				populateDataSet();
+				
+			}
 			if (i == 3)
 				break;
 			topMatches[i] = entry.getKey() + "  :  " + entry.getValue();
