@@ -37,7 +37,7 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 	private static HashMap<String, HashMap<Integer, Double>> contrastMap;
 	private static HashMap<String, HashMap<Integer, Double>> motionMap;
 	private static Map<String, HashMap<Integer, Double>> colorMap;
-	private static HashMap<String, HashMap<Integer, Double>> audioMap;
+	private static Map<String, HashMap<Integer, Double>> audioMap;
 	Button playVideo;
 	Button playQueryVideo;
 	Button pauseVideo;
@@ -155,10 +155,7 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 		queryOpsPanel.add(playQueryVideo, "East");
 		queryOpsPanel.add(pauseQueryVideo, "Center");
 		queryOpsPanel.add(stopQueryVideo, "West");
-//		Panel queryVideoNamePanel = new Panel();
 		queryVideoName = new Label(Constants.QUERY_VIDEO_NAME);
-//		queryVideoNamePanel.add(queryVideoName);
-//		queryOpsPanel.add(queryVideoNamePanel);
 
 		Panel opsPanel = new Panel(new BorderLayout());
 		opsPanel.setLayout(new BorderLayout());
@@ -174,7 +171,6 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 		Panel opsParentPanel = new Panel(new BorderLayout());
 		opsParentPanel.add(opsPanel, "East");
 		opsParentPanel.add(queryOpsPanel, "West");
-//		rootPanel.add(opsParentPanel, "South");
 
 		dataSet = new DefaultCategoryDataset();
 		Panel graphParentPanel = new Panel(new BorderLayout());
@@ -187,7 +183,6 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 		slider.setPaintTicks(true);
 		slider.setPaintLabels(true);
 		slider.addChangeListener(this);
-//		sliderPanel.setPreferredSize(new Dimension(354, 20));
 		sliderPanel.add(slider, "East");
 
 		Panel listParentPanel = new Panel(new BorderLayout());
@@ -206,7 +201,6 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 		rootPanel.add(opsAndGraph, "South");
 
 		rootPanel.add(gridPanel);
-//		rootPanel.add( new JLabel(Constants.QUERY_VIDEO_NAME));
 
 		add(rootPanel, BorderLayout.SOUTH);
 
@@ -306,14 +300,6 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 				try {
 					audio.audioClip.setFramePosition(currentAudioFrame);
 					audio.audioClip.start();
-//					try {
-////						Thread.sleep(20000 / audio.audioFrameSize);
-//					} catch (InterruptedException e) {						
-//						// TODO : Think what to write here
-//						// e.printStackTrace();
-//						currentAudioFrame = audio.audioClip.getFramePosition();
-//						return;
-//					}
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -332,7 +318,6 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 						// considerable delay.
 						Thread.sleep(Math.max(0, 1000 / Constants.FRAME_RATE - diff - 2));
 					} catch (InterruptedException e) {
-						// TODO : Think what to write here
 						currentFrame = i;
 						break;
 					}
@@ -537,10 +522,6 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 		aggregatedGraphMap = merge(aggregatedGraphMap, selectedColorMap);
 		aggregatedGraphMap = merge(aggregatedGraphMap, selectedAudioMap);
 		aggregatedGraphMap = merge(aggregatedGraphMap, selectedMotionMap);
-
-//		aggregatedGraphMap.forEach((k, v) -> selectedContrastMap.merge(k, v, (v1, v2) -> v1 + v2));
-//		aggregatedGraphMap.forEach((k, v) -> selectedColorMap.merge(k, v, (v1, v2) -> v1 + v2));
-//		aggregatedGraphMap.forEach((k, v) -> selectedMotionMap.merge(k, v, (v1, v2) -> v1 + v2));
 
 		for (int i = 0; i < Constants.DB_VIDEO_FRAME_SIZE; i++) {
 			dataSet.addValue(aggregatedGraphMap.get(i), "", i + "");

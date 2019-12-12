@@ -211,12 +211,9 @@ public class MotionStatistics {
 			}
 		}
 		float imageDiff = 0;
-		int total = 0;
 		for (Float d : diff) {
 			imageDiff += d;
-			total++;
 		}
-		// System.out.println("Image difference " + imageDiff);
 
 		return (int) imageDiff;
 	}
@@ -233,11 +230,11 @@ public class MotionStatistics {
 			byte[] bytes = new byte[(int) len];
 
 			raf.read(bytes);
-
+			raf.close();
+			
 			int ind = 0;
 			for (int y = 0; y < height; y++) {
 				for (int x = 0; x < width; x++) {
-					byte a = 0;
 					byte r = bytes[ind];
 					byte g = bytes[ind + height * width];
 					byte b = bytes[ind + height * width * 2];
@@ -247,8 +244,6 @@ public class MotionStatistics {
 					ind++;
 				}
 			}
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

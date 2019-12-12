@@ -19,17 +19,14 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 public class AudioSemantics {
 	
 	
-	private int minValue = Integer.MAX_VALUE;
-	private int maxValue = Integer.MIN_VALUE;
 	ArrayList<Double> audioVariance;
 
-	public HashMap<String, HashMap<Integer, Double>> framewiseAudioValues = new HashMap<>();
+	public Map<String, HashMap<Integer, Double>> framewiseAudioValues = new HashMap<>();
 	Map<String, Integer> maxIndices = new HashMap<>();
-	private int frameLength = 10;
 	
 	Map<String, Double> similarities = new HashMap<>();
 	
-	public HashMap<String, HashMap<Integer, Double>> getFramewiseAudioValues() {
+	public Map<String, HashMap<Integer, Double>> getFramewiseAudioValues() {
 		return framewiseAudioValues;
 	}
 
@@ -79,7 +76,6 @@ public class AudioSemantics {
 			AudioFormat audioFormat = audioInputStream.getFormat();
 			
 			int totalSize = audioFormat.getFrameSize() * (int)audioInputStream.getFrameLength();
-//			int numOfChannels = audioFormat.getChannels();
 			
 			byte[] audioBuffer = new byte[totalSize];
 			
@@ -133,15 +129,6 @@ public class AudioSemantics {
         ArrayList<Double> graphValues = new ArrayList<>(databaseAudioFrames.subList(minError.getKey(), Math.min(minError.getKey() + 150, 600)));
         calculateGraphValues(graphValues, queryFrames, minError.getKey(), databaseAudioPath);
         
-        // calculating percentage
-//        Entry<Integer, Double> maxError = calculateMaxEntry(minErrorValues);
-//        Map<Integer, Double> framewisePercentage = new HashMap<>();
-//        for(Entry<Integer, Double> entry : minErrorValues.entrySet()) {
-//        	framewisePercentage.put(entry.getKey(), (100 - (entry.getValue()/maxError.getValue())*100)*Constants.AUDIO_PRIORITY);
-//        }
-//        framewiseAudioValues.put(databaseAudioPath, framewisePercentage);
-        
-        
 		return minError.getValue();
 	}
 	
@@ -187,34 +174,6 @@ public class AudioSemantics {
 			
 			errorValues.put(i, Math.abs(sum));
 		}
-//		int chunckSize = 35;
-//		Map<Integer, Integer> minCount = new HashMap<>();
-//		for(int i = 0; i < queryFrames.size() - chunckSize; i++) {
-//			ArrayList<Double> chunkOfQueryFrame = new ArrayList<Double>(queryFrames.subList(i, i + chunckSize));
-//			double minVal = Integer.MAX_VALUE;
-//			int frameNo = 0;
-//			for(int j = 0; j < databaseAudioFrames.size() - chunckSize; j++) {
-//				ArrayList<Double> chunkOfDBFrame = new ArrayList<Double>(databaseAudioFrames.subList(j, j + chunckSize));
-//				double sum = 0.0;
-//				for(int k = 0; k < chunckSize; k++) {
-//					sum += Math.abs(chunkOfDBFrame.get(k) - chunkOfQueryFrame.get(k));
-//				}
-//				
-//				if(sum < minVal) {
-//					minVal = sum;
-//					frameNo = j;
-//				}
-//			}
-//			if(errorValues.get(frameNo) == null) {
-//				errorValues.put(frameNo, Math.abs(minVal));
-//				minCount.put(frameNo, 1);
-//			}
-//			else {
-//				errorValues.put(frameNo, errorValues.get(frameNo) + Math.abs(minVal));
-//				minCount.put(frameNo, minCount.get(frameNo) + 1);
-//			}
-//		}
-		
 		
 		return errorValues;
 	}
@@ -239,16 +198,6 @@ public class AudioSemantics {
 		return max;
 	}
 	
-	private Entry<Integer, Double> calculateMaxEntry(Map<Integer, Double> values) {
-		Entry<Integer, Double> max = null;
-		for(Entry<Integer, Double> entry : values.entrySet()) {
-		    if (max == null || max.getValue() < entry.getValue()) {
-		        max = entry;
-		    }
-		}
-		return max;
-	}
-
 	public void caluculateAndSerializeColorValue(String path) throws IOException {
 		audioVariance = audioAnalysis(Constants.BASE_DB_VIDEO_PATH + path + "/" + path + ".wav");
 		FileOutputStream fos = new FileOutputStream(Constants.BASE_DB_VIDEO_PATH + "serialized_video_data/" + path + "_audio.txt");

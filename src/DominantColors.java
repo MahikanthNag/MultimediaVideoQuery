@@ -64,12 +64,10 @@ public class DominantColors {
 			int count = 0;
 			double similarity = Double.MIN_VALUE;
 			double total = 0;
-			int maxSimilarityFrame = -1;
 
 			for (int j = 0; j < Constants.QUERY_VIDEO_FRAME_SIZE; j++) {
 				count = 0;
 				total = 0.0;
-//				total += (double) dominantColorMapPerDBFrame.get(i).values().stream().reduce(0, Integer::sum);
 				total += (double) dominantColorMapPerQueryFrame.get(j).values().stream().reduce(0, Integer::sum);
 				Set<String> queryKeySet = dominantColorMapPerQueryFrame.get(j).keySet();
 
@@ -83,7 +81,6 @@ public class DominantColors {
 				currentSimilarity = count / total;
 				if (similarity < currentSimilarity) {
 					similarity = currentSimilarity;
-					maxSimilarityFrame = j;
 				}
 			}
 			frameWiseSimilarity.put(i, similarity);

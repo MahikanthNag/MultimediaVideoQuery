@@ -14,7 +14,7 @@ public final class Constants {
 	public static final String BASE_DB_VIDEO_PATH = "/Users/mahikanthnag/Downloads/database_videos/";
 	public static final String BASE_QUERY_VIDEO_PATH = "/Users/mahikanthnag/Downloads/query/";
 
-	public static final String QUERY_VIDEO_NAME = "Q4";
+	public static final String QUERY_VIDEO_NAME = "HQ3";
 	public static final String DB_VIDEO_NAME = "flowers";
 
 	public static final double COLOR_PRIORITY = 0.25;
