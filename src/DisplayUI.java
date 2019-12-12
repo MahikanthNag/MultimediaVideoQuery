@@ -148,7 +148,7 @@ public class DisplayUI extends Frame implements ActionListener {
 
 	private String getFileNameSuffix(int num, String path) {
 		String prefix = "";
-		File file = new File(Constants.BASE_DB_VIDEO_PATH + path + "/" + path + "001.rgb");
+		File file = new File(path + "001.rgb");
 		if (!file.exists())
 			prefix = "_";
 		if (num < 10) {
@@ -186,7 +186,7 @@ public class DisplayUI extends Frame implements ActionListener {
 	public void setupVideo(String path) throws IOException {
 		for (int i = 0; i < 600; i++) {
 			File file = new File(
-					Constants.BASE_DB_VIDEO_PATH + path + "/" + path + getFileNameSuffix(i + 1, path) + (i + 1) + ".rgb");
+					Constants.BASE_DB_VIDEO_PATH + path + "/" + path + getFileNameSuffix(i + 1, (Constants.BASE_DB_VIDEO_PATH + path + "/" + path)) + (i + 1) + ".rgb");
 			BufferedImage img = getBufferedImageFromFile(file);
 			images.add(img);
 		}
@@ -197,7 +197,7 @@ public class DisplayUI extends Frame implements ActionListener {
 	public void setupQueryVideo(String path) throws IOException {
 		for (int i = 0; i < 150; i++) {
 			File file = new File(
-					Constants.BASE_QUERY_VIDEO_PATH + path + "/" + path + getFileNameSuffix(i + 1, path) + (i + 1) + ".rgb");
+					Constants.BASE_QUERY_VIDEO_PATH + path + "/" + path + getFileNameSuffix(i + 1, Constants.BASE_QUERY_VIDEO_PATH + path + "/" + path) + (i + 1) + ".rgb");
 			BufferedImage img = getBufferedImageFromFile(file);
 			queryImages.add(img);
 		}
@@ -387,6 +387,7 @@ public class DisplayUI extends Frame implements ActionListener {
 		try {
 			DisplayUI ui = new DisplayUI();
 //			ui.display();
+			ui.motionStatistics.getGraphMappingForAllVideos(Constants.QUERY_VIDEO_NAME);
 
 			ui.contrastSimilarity = ui.contrastStatistics.calculateStatsOfAllPairs(Constants.QUERY_VIDEO_NAME);
 
