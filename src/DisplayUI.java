@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -33,6 +34,9 @@ import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.DefaultCategoryDataset;
 
 public class DisplayUI extends Frame implements ActionListener, ChangeListener, ListSelectionListener {
+	private static HashMap<String, HashMap<Integer, Double>> contrastMap;
+	private static HashMap<String, HashMap<Integer, Double>> motionMap;
+	private static Map<String, HashMap<Integer, Double>> colorMap;
 	Button playVideo;
 	Button playQueryVideo;
 	Button pauseVideo;
@@ -45,7 +49,7 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 
 	Panel listPanel;
 	JList listView;
-	
+
 	String currentdbVideoName;
 
 	Panel videoOps;
@@ -84,6 +88,9 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 	long start1;
 	long start2;
 
+	HashMap<Integer, Double> aggregatedGraphMap;
+
+	DefaultCategoryDataset dataSet;
 	ContrastStatistics contrastStatistics = new ContrastStatistics();
 	Map<String, Double> contrastSimilarity;
 
@@ -99,6 +106,9 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 	Map<String, Double> aggregateRankingMap = new TreeMap<>();
 
 	DisplayUI() throws IOException {
+		aggregatedGraphMap = new HashMap<>();
+		initializeFrameMap(aggregatedGraphMap);
+
 		rootPanel = new Panel(new BorderLayout());
 
 		playVideo = new Button("Play");
@@ -119,11 +129,11 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 		queryVideoOps = new Panel();
 		videoPanel = new Panel();
 		queryVideoPanel = new Panel();
-		
+
 		currentdbVideoName = Constants.DB_VIDEO_NAME;
 
-		BufferedImage initialDisplayImageFrame = getBufferedImageFromFile(new File(
-				Constants.BASE_DB_VIDEO_PATH + currentdbVideoName + "/" + currentdbVideoName + "001.rgb"));
+		BufferedImage initialDisplayImageFrame = getBufferedImageFromFile(
+				new File(Constants.BASE_DB_VIDEO_PATH + currentdbVideoName + "/" + currentdbVideoName + "001.rgb"));
 		BufferedImage initialDisplayImageFrameForQuery = getBufferedImageFromFile(
 				new File(Constants.BASE_QUERY_VIDEO_PATH + Constants.QUERY_VIDEO_NAME + "/" + Constants.QUERY_VIDEO_NAME
 						+ "_001.rgb"));
@@ -158,24 +168,17 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 
 		gridPanel.add(videoPanel, "East");
 		gridPanel.add(queryVideoPanel, "West");
-		
+
 		Panel opsAndGraph = new Panel(new BorderLayout());
 		Panel opsParentPanel = new Panel(new BorderLayout());
 		opsParentPanel.add(opsPanel, "East");
 		opsParentPanel.add(queryOpsPanel, "West");
 //		rootPanel.add(opsParentPanel, "South");
-		
-		DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-		dataset.addValue(15, "", "1970");
-		dataset.addValue(30, "", "1980");
-		dataset.addValue(15, "", "1990");
-		dataset.addValue(30, "", "2000");
-		dataset.addValue(15, "", "2010");
-		dataset.addValue(30, "", "2014");
-		
-		Panel graphParentPanel = new Panel(new BorderLayout());		
-		graphParentPanel.add(drawGraph(dataset), "East");
-		
+
+		dataSet = new DefaultCategoryDataset();
+		Panel graphParentPanel = new Panel(new BorderLayout());
+		graphParentPanel.add(drawGraph(dataSet), "East");
+
 		sliderPanel = new Panel(new BorderLayout());
 		slider = new JSlider(0, 599, 0);
 		slider.setPreferredSize(new Dimension(354, 20));
@@ -185,9 +188,9 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 		slider.addChangeListener(this);
 //		sliderPanel.setPreferredSize(new Dimension(354, 20));
 		sliderPanel.add(slider, "East");
-		
+
 		Panel listParentPanel = new Panel(new BorderLayout());
-		
+
 		listPanel = new Panel();
 		listView = new JList<String>();
 		listView.addListSelectionListener(this);
@@ -196,32 +199,36 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 		sliderPanel.add(listParentPanel, "South");
 
 		graphParentPanel.add(sliderPanel, "South");
-		
+
 		opsAndGraph.add(opsParentPanel, "North");
 		opsAndGraph.add(graphParentPanel, "South");
 		rootPanel.add(opsAndGraph, "South");
 
-
 		rootPanel.add(gridPanel);
 //		rootPanel.add( new JLabel(Constants.QUERY_VIDEO_NAME));
-		
 
 		add(rootPanel, BorderLayout.SOUTH);
 
 		images = new ArrayList<>();
-		queryImages = new ArrayList<>();			
+		queryImages = new ArrayList<>();
 
 		setupVideo(currentdbVideoName);
 		setupQueryVideo(Constants.QUERY_VIDEO_NAME);
 	}
 
+	private void initializeFrameMap(Map<Integer, Double> map) {
+		for (int i = 0; i < 600; i++) {
+			map.put(i, 0.0);
+		}
+	}
+
 	private ChartPanel drawGraph(DefaultCategoryDataset dataSet) {
-		JFreeChart lineChart = ChartFactory.createLineChart("", "", "", dataSet,
-				PlotOrientation.VERTICAL, true, true, false);
+		JFreeChart lineChart = ChartFactory.createLineChart("", "", "", dataSet, PlotOrientation.VERTICAL, true, true,
+				false);
 
 		ChartPanel chartPanel = new ChartPanel(lineChart);
-		chartPanel.setPreferredSize(new Dimension(354, 50));
-		
+		chartPanel.setPreferredSize(new Dimension(354, 100));
+
 		return chartPanel;
 	}
 
@@ -267,9 +274,9 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 		currentAudioFrame = 0;
 		images = new ArrayList<>();
 		for (int i = 0; i < 600; i++) {
-			File file = new File(
-					Constants.BASE_DB_VIDEO_PATH + path + "/" + path + getFileNameSuffix(i + 1, (Constants.BASE_DB_VIDEO_PATH + path + "/" + path)) + (i + 1) + ".rgb");
-			
+			File file = new File(Constants.BASE_DB_VIDEO_PATH + path + "/" + path
+					+ getFileNameSuffix(i + 1, (Constants.BASE_DB_VIDEO_PATH + path + "/" + path)) + (i + 1) + ".rgb");
+
 			BufferedImage img = getBufferedImageFromFile(file);
 			images.add(img);
 		}
@@ -282,8 +289,8 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 		currentQueryAudioFrame = 0;
 		queryImages = new ArrayList<>();
 		for (int i = 0; i < 150; i++) {
-			File file = new File(
-					Constants.BASE_QUERY_VIDEO_PATH + path + "/" + path + getFileNameSuffix(i + 1, Constants.BASE_QUERY_VIDEO_PATH + path + "/" + path) + (i + 1) + ".rgb");
+			File file = new File(Constants.BASE_QUERY_VIDEO_PATH + path + "/" + path
+					+ getFileNameSuffix(i + 1, Constants.BASE_QUERY_VIDEO_PATH + path + "/" + path) + (i + 1) + ".rgb");
 			BufferedImage img = getBufferedImageFromFile(file);
 			queryImages.add(img);
 		}
@@ -447,7 +454,8 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 				currentQueryFrame = 0;
 				currentQueryAudioFrame = 0;
 				queryAudio.audioClip.setFramePosition(0);
-				updateFrameInVideoAndRepaint(queryIcon, queryLabel, queryVideoPanel, gridPanel, currentQueryFrame, 1, 0);
+				updateFrameInVideoAndRepaint(queryIcon, queryLabel, queryVideoPanel, gridPanel, currentQueryFrame, 1,
+						0);
 			}
 		}
 	}
@@ -472,16 +480,22 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 
 	public static void main(String[] args) throws ClassNotFoundException {
 		try {
-			DisplayUI ui = new DisplayUI();			
-//			ui.motionStatistics.getGraphMappingForAllVideos(Constants.QUERY_VIDEO_NAME);
+			DisplayUI ui = new DisplayUI();
 
 			ui.contrastSimilarity = ui.contrastStatistics.calculateStatsOfAllPairs(Constants.QUERY_VIDEO_NAME);
+			contrastMap = ui.contrastStatistics.getGraphMappingForAllVideos(Constants.QUERY_VIDEO_NAME);
+			System.out.println("After contrast");
 
 			ui.audioSimilarity = ui.audioSemantics.calculateStatsOfAllPairs(Constants.QUERY_VIDEO_NAME);
+			System.out.println("After audio");
 
 			ui.colorSimilarity = ui.dominantColors.calculateStatsOfAllPairs(Constants.QUERY_VIDEO_NAME);
-
-			ui.motionSimilarity = ui.motionStatistics.calculateStatsOfAllPairs(Constants.QUERY_VIDEO_NAME);
+			colorMap = ui.dominantColors.videoWiseFrameSimilarity;
+			System.out.println("After color");
+//
+//			ui.motionSimilarity = ui.motionStatistics.calculateStatsOfAllPairs(Constants.QUERY_VIDEO_NAME);
+//			motionMap = ui.motionStatistics.getGraphMappingForAllVideos(Constants.QUERY_VIDEO_NAME);
+//			System.out.println("After motion");
 
 			ui.totalSimilarity("flowers");
 			ui.totalSimilarity("interview");
@@ -493,22 +507,38 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 
 			ui.aggregateRankingMap = sortByValues(ui.aggregateRankingMap);
 
+			ui.populateDataSet();
+
 			ui.printResults();
 			ui.display();
-			
 //			ui.aggregateRankingMap.put("flowers", 1.0);
 //			ui.aggregateRankingMap.put("interview", 1.0);
 //			ui.aggregateRankingMap.put("sports", 1.0);
-			ui.interactiveUI();			
+			ui.initializePanel();
 
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
+	private void populateDataSet() {
+
+		HashMap<Integer, Double> selectedContrastMap = contrastMap.get(currentdbVideoName);
+		HashMap<Integer, Double> selectedColorMap = colorMap.get(currentdbVideoName);
+//		HashMap<Integer, Double> selectedMotionMap = motionMap.get(currentdbVideoName);
+
+//		aggregatedGraphMap.forEach((k, v) -> selectedContrastMap.merge(k, v, (v1, v2) -> v1 + v2));
+		aggregatedGraphMap.forEach((k, v) -> selectedColorMap.merge(k, v, (v1, v2) -> v1 + v2));
+
+		for (int i = 0; i < Constants.DB_VIDEO_FRAME_SIZE; i++) {
+			dataSet.addValue(selectedContrastMap.get(i), "", i + "");
+		}
+	}
+
 	public void totalSimilarity(String query) {
-		double totalSimilarity = contrastSimilarity.get(query) + audioSimilarity.get(query) + colorSimilarity.get(query)
-				+ motionSimilarity.get(query);
+//		double totalSimilarity = contrastSimilarity.get(query) + audioSimilarity.get(query) + colorSimilarity.get(query)
+//				+ motionSimilarity.get(query);
+		double totalSimilarity = contrastSimilarity.get(query) + audioSimilarity.get(query);
 
 		aggregateRankingMap.put(query, totalSimilarity);
 	}
@@ -520,7 +550,7 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 				if (compare == 0)
 					return 1;
 				else
-					return compare;
+					return -compare;
 			}
 		};
 		Map<K, V> sortedByValues = new TreeMap<K, V>(valueComparator);
@@ -534,14 +564,14 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 		}
 	}
 
-	public void interactiveUI() {
+	public void initializePanel() {
 		String[] topMatches = new String[3];
 		getTop3VideosArray(topMatches);
 
 		listPanel.remove(listView);
 		listView = new JList<String>(topMatches);
-		listView.addListSelectionListener(this);		
-		listPanel.add(listView);		
+		listView.addListSelectionListener(this);
+		listPanel.add(listView);
 		repaint();
 	}
 
@@ -570,9 +600,11 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 					* Constants.DB_AUDIO_FRAME_SIZE * 4);
 			BufferedImage scrubbedScreenshot = null;
 			try {
-				scrubbedScreenshot = getBufferedImageFromFile(new File(Constants.BASE_DB_VIDEO_PATH
-						+ currentdbVideoName + "/" + currentdbVideoName
-						+ getFileNameSuffix(currentFrame + 1, currentdbVideoName) + (currentFrame + 1) + ".rgb"));
+				scrubbedScreenshot = getBufferedImageFromFile(
+						new File(Constants.BASE_DB_VIDEO_PATH + currentdbVideoName + "/" + currentdbVideoName
+								+ getFileNameSuffix(currentFrame + 1,
+										Constants.BASE_DB_VIDEO_PATH + currentdbVideoName + "/" + currentdbVideoName)
+								+ (currentFrame + 1) + ".rgb"));
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
@@ -596,7 +628,9 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 				audio.audioClip.stop();
 			}
 			try {
-				currentdbVideoName = selectedVideo;						
+				currentdbVideoName = selectedVideo;
+				populateDataSet();
+
 				setupVideo(selectedVideo);
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block
