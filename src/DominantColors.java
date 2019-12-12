@@ -5,13 +5,9 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.RandomAccessFile;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -73,14 +69,13 @@ public class DominantColors {
 			for (int j = 0; j < Constants.QUERY_VIDEO_FRAME_SIZE; j++) {
 				count = 0;
 				total = 0.0;
-				total += (double) dominantColorMapPerDBFrame.get(i).values().stream().reduce(0, Integer::sum);
+//				total += (double) dominantColorMapPerDBFrame.get(i).values().stream().reduce(0, Integer::sum);
 				total += (double) dominantColorMapPerQueryFrame.get(j).values().stream().reduce(0, Integer::sum);
 				Set<String> queryKeySet = dominantColorMapPerQueryFrame.get(j).keySet();
 
 				for (Map.Entry<String, Integer> entry : dominantColorMapPerDBFrame.get(i).entrySet()) {
 					if (queryKeySet.contains(entry.getKey())) {
-						count += 2
-								* Math.min(entry.getValue(), dominantColorMapPerQueryFrame.get(j).get(entry.getKey()));
+						count += Math.min(entry.getValue(), dominantColorMapPerQueryFrame.get(j).get(entry.getKey()));
 					}
 				}
 
@@ -94,6 +89,11 @@ public class DominantColors {
 			frameWiseSimilarity.put(i, similarity);
 		}
 		double meanSimilarity = frameWiseSimilarity.values().stream().reduce(0.0, Double::sum);
+		
+		for (Map.Entry<Integer, Double> entry : frameWiseSimilarity.entrySet()) {
+			frameWiseSimilarity.put(entry.getKey(), entry.getValue() * 100 * Constants.COLOR_PRIORITY);
+		}
+		
 		videoWiseFrameSimilarity.put(queryPath, (HashMap<Integer, Double>) frameWiseSimilarity);
 		meanSimilarity = meanSimilarity / Constants.DB_VIDEO_FRAME_SIZE;
 		return meanSimilarity * 100 * Constants.COLOR_PRIORITY;

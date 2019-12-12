@@ -37,6 +37,7 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 	private static HashMap<String, HashMap<Integer, Double>> contrastMap;
 	private static HashMap<String, HashMap<Integer, Double>> motionMap;
 	private static Map<String, HashMap<Integer, Double>> colorMap;
+	private static HashMap<String, HashMap<Integer, Double>> audioMap;
 	Button playVideo;
 	Button playQueryVideo;
 	Button pauseVideo;
@@ -88,7 +89,7 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 	long start1;
 	long start2;
 
-	HashMap<Integer, Double> aggregatedGraphMap;
+	Map<Integer, Double> aggregatedGraphMap;
 
 	DefaultCategoryDataset dataSet;
 	ContrastStatistics contrastStatistics = new ContrastStatistics();
@@ -475,24 +476,23 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 		videoPanel.add(label, 0);
 		gridPanel.add(videoPanel, index);
 		repaint();
-//		revalidate();
 	}
 
 	public static void main(String[] args) throws ClassNotFoundException {
 		try {
 			DisplayUI ui = new DisplayUI();
-
 			ui.contrastSimilarity = ui.contrastStatistics.calculateStatsOfAllPairs(Constants.QUERY_VIDEO_NAME);
 			contrastMap = ui.contrastStatistics.getGraphMappingForAllVideos(Constants.QUERY_VIDEO_NAME);
 			System.out.println("After contrast");
 
 			ui.audioSimilarity = ui.audioSemantics.calculateStatsOfAllPairs(Constants.QUERY_VIDEO_NAME);
+			audioMap = ui.audioSemantics.getFramewiseAudioValues();
 			System.out.println("After audio");
 
 			ui.colorSimilarity = ui.dominantColors.calculateStatsOfAllPairs(Constants.QUERY_VIDEO_NAME);
 			colorMap = ui.dominantColors.videoWiseFrameSimilarity;
 			System.out.println("After color");
-//
+
 //			ui.motionSimilarity = ui.motionStatistics.calculateStatsOfAllPairs(Constants.QUERY_VIDEO_NAME);
 //			motionMap = ui.motionStatistics.getGraphMappingForAllVideos(Constants.QUERY_VIDEO_NAME);
 //			System.out.println("After motion");
@@ -508,37 +508,48 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 			ui.aggregateRankingMap = sortByValues(ui.aggregateRankingMap);
 
 			ui.populateDataSet();
-
 			ui.printResults();
-			ui.display();
-//			ui.aggregateRankingMap.put("flowers", 1.0);
-//			ui.aggregateRankingMap.put("interview", 1.0);
-//			ui.aggregateRankingMap.put("sports", 1.0);
 			ui.initializePanel();
+			ui.display();
 
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	private Map<Integer, Double> merge(Map<Integer, Double> map1, Map<Integer, Double> map2) {
+		Map<Integer, Double> map = new HashMap<>();
+		for(int i = 0; i < Constants.DB_VIDEO_FRAME_SIZE; i++) {
+			map.put(i, map1.get(i) + map2.get(i));
+		}
+		return map;
 	}
 
 	private void populateDataSet() {
 
 		HashMap<Integer, Double> selectedContrastMap = contrastMap.get(currentdbVideoName);
 		HashMap<Integer, Double> selectedColorMap = colorMap.get(currentdbVideoName);
+		HashMap<Integer, Double> selectedAudioMap = audioMap.get(currentdbVideoName);
 //		HashMap<Integer, Double> selectedMotionMap = motionMap.get(currentdbVideoName);
+		initializeFrameMap(aggregatedGraphMap);
+		aggregatedGraphMap = merge(aggregatedGraphMap, selectedContrastMap);
+		aggregatedGraphMap = merge(aggregatedGraphMap, selectedColorMap);
+		aggregatedGraphMap = merge(aggregatedGraphMap, selectedAudioMap);
+//		aggregatedGraphMap = merge(aggregatedGraphMap, selectedContrastMap);
 
 //		aggregatedGraphMap.forEach((k, v) -> selectedContrastMap.merge(k, v, (v1, v2) -> v1 + v2));
-		aggregatedGraphMap.forEach((k, v) -> selectedColorMap.merge(k, v, (v1, v2) -> v1 + v2));
+//		aggregatedGraphMap.forEach((k, v) -> selectedColorMap.merge(k, v, (v1, v2) -> v1 + v2));
+//		aggregatedGraphMap.forEach((k, v) -> selectedMotionMap.merge(k, v, (v1, v2) -> v1 + v2));
 
 		for (int i = 0; i < Constants.DB_VIDEO_FRAME_SIZE; i++) {
-			dataSet.addValue(selectedContrastMap.get(i), "", i + "");
+			dataSet.addValue(aggregatedGraphMap.get(i), "", i + "");
 		}
 	}
 
 	public void totalSimilarity(String query) {
 //		double totalSimilarity = contrastSimilarity.get(query) + audioSimilarity.get(query) + colorSimilarity.get(query)
 //				+ motionSimilarity.get(query);
-		double totalSimilarity = contrastSimilarity.get(query) + audioSimilarity.get(query);
+		double totalSimilarity = colorSimilarity.get(query) + contrastSimilarity.get(query) + audioSimilarity.get(query);
 
 		aggregateRankingMap.put(query, totalSimilarity);
 	}
@@ -580,7 +591,7 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 		for (Map.Entry<String, Double> entry : aggregateRankingMap.entrySet()) {
 			if (i == 3)
 				break;
-			topMatches[i] = entry.getKey();
+			topMatches[i] = entry.getKey() + "  :  " + entry.getValue();
 			i++;
 		}
 	}
@@ -613,7 +624,6 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 			videoIcon = new ImageIcon(scrubbedScreenshot);
 			videoLabel.setIcon(videoIcon);
 			repaint();
-//			revalidate();
 		}
 	}
 
@@ -628,10 +638,10 @@ public class DisplayUI extends Frame implements ActionListener, ChangeListener, 
 				audio.audioClip.stop();
 			}
 			try {
-				currentdbVideoName = selectedVideo;
+				currentdbVideoName = selectedVideo.split(":")[0].trim();
 				populateDataSet();
 
-				setupVideo(selectedVideo);
+				setupVideo(currentdbVideoName);
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();

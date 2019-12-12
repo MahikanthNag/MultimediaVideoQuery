@@ -66,7 +66,7 @@ public class AudioSemantics {
 	}
 	
 	private void calculateHighestValues(Map<Integer, Double> map, Integer index) {
-		for(int i = index; i < index + 150; i++) {
+		for(int i = index; i < Math.min(index + 150, 600); i++) {
 			map.put(i, (map.get(i) / 15) * 22);
 		}
 		
@@ -147,7 +147,7 @@ public class AudioSemantics {
 	
 	public void calculateGraphValues(ArrayList<Double> graphValues, ArrayList<Double> queryFrames, int index, String databaseAudioPath) {
 		ArrayList<Double> values = new ArrayList<>();
-		for(int i = 0; i < queryFrames.size(); i++) {
+		for(int i = 0; i < Math.min(graphValues.size(), queryFrames.size()); i++) {
 			double value = Math.abs(graphValues.get(i) - queryFrames.get(i));
 			values.add(value);	
 		}
@@ -155,13 +155,13 @@ public class AudioSemantics {
 		Double maxVal = Collections.max(values);
 		int maxIndex = values.indexOf(Collections.max(values)) + index;
 		maxIndices.put(databaseAudioPath, maxIndex);
-		for(int i = 0; i < queryFrames.size(); i++) {
+		for(int i = 0; i < Math.min(graphValues.size(), queryFrames.size()); i++) {
 			values.set(i, (values.get(i)/maxVal) * 15);
 		}
 		HashMap<Integer, Double> framewisePercentage = new HashMap<>();
 		initializeFinalMap(framewisePercentage);
 		
-		for(int i = 0; i < queryFrames.size(); i++) {
+		for(int i = 0; i < Math.min(graphValues.size(), queryFrames.size()); i++) {
 			framewisePercentage.put(index + i, values.get(i));
 		}
 		
