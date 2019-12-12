@@ -86,17 +86,17 @@ public class MotionStatistics {
 	private HashMap<Integer, Double> calculateGraphStats(String path, String queryPath)
 			throws IOException, ClassNotFoundException {
 		FileInputStream fis = new FileInputStream(
-				Constants.BASE_DB_VIDEO_PATH + "serialized_video_data/" + path + "_contrast.txt");
+				Constants.BASE_DB_VIDEO_PATH + "serialized_video_data/" + path + "_motion.txt");
 		ObjectInputStream iis = new ObjectInputStream(fis);
-		HashMap<Integer, Double> dbMotionStatistics = (HashMap<Integer, Double>) iis.readObject();
+		HashMap<Integer, Integer> dbMotionStatistics = (HashMap<Integer, Integer>) iis.readObject();
 		HashMap<Integer, Integer> dominantMotionInQuery = findMotionForAllFrames(
 				Constants.BASE_QUERY_VIDEO_PATH + queryPath + "/" + queryPath, 1);
 		iis.close();
-		return getSimilarityForGraph(dbMotionStatistics, dominantMotionInQuery);
+		return getSimilarityForGraph(dbMotionStatistics, dominantMotionInQuery, path);
 	}
 
-	private HashMap<Integer, Double> getSimilarityForGraph(HashMap<Integer, Double> dbMotionStatistics,
-			HashMap<Integer, Integer> dominantMotionInQuery) {
+	private HashMap<Integer, Double> getSimilarityForGraph(HashMap<Integer, Integer> dbMotionStatistics,
+			HashMap<Integer, Integer> dominantMotionInQuery, String path) {
 		HashMap<Integer, Double> allFramesSimilarity = new HashMap<>();
 	    for (int i = 0; i < Constants.DB_VIDEO_FRAME_SIZE; i++) {
 	        allFramesSimilarity.put(i, Double.MAX_VALUE);
@@ -104,9 +104,7 @@ public class MotionStatistics {
 	    double minDiff = Double.MAX_VALUE, maxDiff = Double.MIN_VALUE;
 		for (int i = 0; i <= (Constants.DB_VIDEO_FRAME_SIZE - Constants.QUERY_VIDEO_FRAME_SIZE); i++) {
 			for (int j = 0; j < Constants.QUERY_VIDEO_FRAME_SIZE; j++) {
-				double dbVal = dbMotionStatistics.get(i + j);
-				double queryVal = dominantMotionInQuery.get(j);
-				double curDiff = Math.abs(dbVal - queryVal);
+				double curDiff = Math.abs(dbMotionStatistics.get(i + j) - dominantMotionInQuery.get(j));
 				if (curDiff < allFramesSimilarity.get(i + j))
 					allFramesSimilarity.replace(i + j, curDiff);
 			}
@@ -121,7 +119,7 @@ public class MotionStatistics {
 	    // Replacing diff by similarity
 	    for (int i = 0; i < Constants.DB_VIDEO_FRAME_SIZE; i++) {
 	        double diff = allFramesSimilarity.get(i);
-			double simVal = 100 - (diff);
+			double simVal = (1 - (diff - minDiff) / (maxDiff - minDiff)) * similarities.get(path);
 			allFramesSimilarity.replace(i, simVal);
 	    }
 		return allFramesSimilarity;

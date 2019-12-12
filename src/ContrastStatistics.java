@@ -101,11 +101,11 @@ public class ContrastStatistics {
 		HashMap<Integer, Double> queryContrast = findContrastOfAllFrames(
 				Constants.BASE_QUERY_VIDEO_PATH + queryPath + "/" + queryPath, 1);
 		iis.close();
-		return getSimilarityForGraph(dbVideoContrast, queryContrast);
+		return getSimilarityForGraph(dbVideoContrast, queryContrast, path);
 	}
 
 	private HashMap<Integer, Double> getSimilarityForGraph(HashMap<Integer, Double> dbVideoContrast,
-			HashMap<Integer, Double> queryContrast) {
+			HashMap<Integer, Double> queryContrast, String path) {
 		HashMap<Integer, Double> allFramesSimilarity = new HashMap<>();
 	    for (int i = 0; i < Constants.DB_VIDEO_FRAME_SIZE; i++) {
 	        allFramesSimilarity.put(i, Double.MAX_VALUE);
@@ -128,7 +128,7 @@ public class ContrastStatistics {
 	    // Replacing diff by similarity
 	    for (int i = 0; i < Constants.DB_VIDEO_FRAME_SIZE; i++) {
 	        double diff = allFramesSimilarity.get(i);
-			double simVal = (100 - ((diff - minDiff) / (maxDiff - minDiff) * 100)) * 0.9;
+			double simVal = (1 - (diff - minDiff) / (maxDiff - minDiff)) * similarities.get(path);
 			allFramesSimilarity.replace(i, simVal);
 	    }
 		return allFramesSimilarity;		
