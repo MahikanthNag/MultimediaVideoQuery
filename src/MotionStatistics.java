@@ -59,7 +59,7 @@ public class MotionStatistics {
 	private double getSimilarityScore(HashMap<Integer, Integer> dbMotionStatistics,
 			HashMap<Integer, Integer> dominantMotionInQuery) {
 		double leastDiff = 99999999;
-		for (int i = 0; i < (dbMotionStatistics.size() - dominantMotionInQuery.size()); i++) {
+		for (int i = 0; i <= (dbMotionStatistics.size() - dominantMotionInQuery.size()); i++) {
 			double curDiff = 0;
 			for (int j = 0; j < dominantMotionInQuery.size(); j++) {
 				curDiff += Math.abs(dbMotionStatistics.get(i + j) - dominantMotionInQuery.get(j)) / 1000;
@@ -70,7 +70,64 @@ public class MotionStatistics {
 		}
 		return leastDiff;
 	}
+	public HashMap<String, HashMap<Integer, Double>> getGraphMappingForAllVideos(String queryPath)
+			throws ClassNotFoundException, IOException {
+		HashMap<String, HashMap<Integer, Double>> mapping = new HashMap<>();
+		mapping.put("flowers", calculateGraphStats("flowers", queryPath));
+		mapping.put("interview", calculateGraphStats("interview", queryPath));
+		mapping.put("movie", calculateGraphStats("movie", queryPath));
+		mapping.put("musicvideo", calculateGraphStats("musicvideo", queryPath));
+		mapping.put("sports", calculateGraphStats("sports", queryPath));
+		mapping.put("starcraft", calculateGraphStats("starcraft", queryPath));
+		mapping.put("traffic", calculateGraphStats("traffic", queryPath));
+		return mapping;
+	}
 
+	private HashMap<Integer, Double> calculateGraphStats(String path, String queryPath)
+			throws IOException, ClassNotFoundException {
+		FileInputStream fis = new FileInputStream(
+				Constants.BASE_DB_VIDEO_PATH + "serialized_video_data/" + path + "_contrast.txt");
+		ObjectInputStream iis = new ObjectInputStream(fis);
+		HashMap<Integer, Double> dbMotionStatistics = (HashMap<Integer, Double>) iis.readObject();
+		HashMap<Integer, Integer> dominantMotionInQuery = findMotionForAllFrames(
+				Constants.BASE_QUERY_VIDEO_PATH + queryPath + "/" + queryPath, 1);
+		iis.close();
+		return getSimilarityForGraph(dbMotionStatistics, dominantMotionInQuery);
+	}
+
+	private HashMap<Integer, Double> getSimilarityForGraph(HashMap<Integer, Double> dbMotionStatistics,
+			HashMap<Integer, Integer> dominantMotionInQuery) {
+		HashMap<Integer, Double> allFramesSimilarity = new HashMap<>();
+	    for (int i = 0; i < Constants.DB_VIDEO_FRAME_SIZE; i++) {
+	        allFramesSimilarity.put(i, Double.MAX_VALUE);
+	    }
+	    double minDiff = Double.MAX_VALUE, maxDiff = Double.MIN_VALUE;
+		for (int i = 0; i <= (Constants.DB_VIDEO_FRAME_SIZE - Constants.QUERY_VIDEO_FRAME_SIZE); i++) {
+			for (int j = 0; j < Constants.QUERY_VIDEO_FRAME_SIZE; j++) {
+				double dbVal = dbMotionStatistics.get(i + j);
+				double queryVal = dominantMotionInQuery.get(j);
+				double curDiff = Math.abs(dbVal - queryVal);
+				if (curDiff < allFramesSimilarity.get(i + j))
+					allFramesSimilarity.replace(i + j, curDiff);
+			}
+		}
+		for (int i = 0; i < Constants.DB_VIDEO_FRAME_SIZE; i++) {
+			double curDiff = allFramesSimilarity.get(i);
+			if (curDiff < minDiff)
+				minDiff = curDiff;
+			if (curDiff > maxDiff)
+				maxDiff = curDiff;			
+		}
+	    // Replacing diff by similarity
+	    for (int i = 0; i < Constants.DB_VIDEO_FRAME_SIZE; i++) {
+	        double diff = allFramesSimilarity.get(i);
+			double simVal = 100 - (diff);
+			allFramesSimilarity.replace(i, simVal);
+	    }
+		return allFramesSimilarity;
+	}
+
+	
 	public void caluculateAndSerializeMotionValue(String path) throws IOException {
 		HashMap<Integer, Integer> framewiseMotionStatistics = findMotionForAllFrames(
 				Constants.BASE_DB_VIDEO_PATH + path + "/" + path, 0);

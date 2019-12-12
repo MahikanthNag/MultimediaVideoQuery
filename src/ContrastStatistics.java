@@ -111,16 +111,19 @@ public class ContrastStatistics {
 	        allFramesSimilarity.put(i, Double.MAX_VALUE);
 	    }
 	    double minDiff = Double.MAX_VALUE, maxDiff = Double.MIN_VALUE;
-		for (int i = 0; i < (Constants.DB_VIDEO_FRAME_SIZE - Constants.QUERY_VIDEO_FRAME_SIZE); i++) {
+		for (int i = 0; i <= (Constants.DB_VIDEO_FRAME_SIZE - Constants.QUERY_VIDEO_FRAME_SIZE); i++) {
 			for (int j = 0; j < queryContrast.size(); j++) {
 				double curDiff = Math.abs(dbVideoContrast.get(i + j) - queryContrast.get(j));
 				if (curDiff < allFramesSimilarity.get(i + j))
 					allFramesSimilarity.replace(i + j, curDiff);
-				if (curDiff < minDiff)
-					minDiff = curDiff;
-				if (curDiff > maxDiff)
-					maxDiff = curDiff;
 			}
+		}
+		for (int i = 0; i < Constants.DB_VIDEO_FRAME_SIZE; i++) {
+			double curDiff = allFramesSimilarity.get(i);
+			if (curDiff < minDiff)
+				minDiff = curDiff;
+			if (curDiff > maxDiff)
+				maxDiff = curDiff;			
 		}
 	    // Replacing diff by similarity
 	    for (int i = 0; i < Constants.DB_VIDEO_FRAME_SIZE; i++) {
