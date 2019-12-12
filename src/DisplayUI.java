@@ -1,7 +1,7 @@
 import java.awt.BorderLayout;
 import java.awt.Button;
+import java.awt.Dimension;
 import java.awt.Frame;
-import java.awt.GridLayout;
 import java.awt.Label;
 import java.awt.Panel;
 import java.awt.event.ActionEvent;
@@ -18,14 +18,35 @@ import java.util.TreeMap;
 
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JPanel;
+import javax.swing.JSlider;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
-public class DisplayUI extends Frame implements ActionListener {
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.data.category.DefaultCategoryDataset;
+
+public class DisplayUI extends Frame implements ActionListener, ChangeListener, ListSelectionListener {
 	Button playVideo;
 	Button playQueryVideo;
 	Button pauseVideo;
 	Button pauseQueryVideo;
 	Button stopVideo;
 	Button stopQueryVideo;
+
+	Panel sliderPanel;
+	JSlider slider;
+
+	Panel listPanel;
+	JList listView;
+	
+	String currentdbVideoName;
 
 	Panel videoOps;
 	Panel queryVideoOps;
@@ -45,7 +66,7 @@ public class DisplayUI extends Frame implements ActionListener {
 	ImageIcon queryIcon;
 
 	Panel rootPanel;
-	Panel gridPanel;
+	JPanel gridPanel;
 
 	Thread videoThread;
 	Thread audioThread;
@@ -78,7 +99,7 @@ public class DisplayUI extends Frame implements ActionListener {
 	Map<String, Double> aggregateRankingMap = new TreeMap<>();
 
 	DisplayUI() throws IOException {
-		rootPanel = new Panel();
+		rootPanel = new Panel(new BorderLayout());
 
 		playVideo = new Button("Play");
 		playQueryVideo = new Button("Play");
@@ -98,12 +119,17 @@ public class DisplayUI extends Frame implements ActionListener {
 		queryVideoOps = new Panel();
 		videoPanel = new Panel();
 		queryVideoPanel = new Panel();
+		
+		currentdbVideoName = Constants.DB_VIDEO_NAME;
 
-		// TODO : Need to change these initial frames
-		BufferedImage initialDisplayImageFrame = getBufferedImageFromFile(
-				new File("E:/USC/Sem3/Multimedia/Project/database_videos/flowers/flowers001.rgb"));
+		BufferedImage initialDisplayImageFrame = getBufferedImageFromFile(new File(
+				Constants.BASE_DB_VIDEO_PATH + currentdbVideoName + "/" + currentdbVideoName + "001.rgb"));
+		BufferedImage initialDisplayImageFrameForQuery = getBufferedImageFromFile(
+				new File(Constants.BASE_QUERY_VIDEO_PATH + Constants.QUERY_VIDEO_NAME + "/" + Constants.QUERY_VIDEO_NAME
+						+ "_001.rgb"));
+
 		videoIcon = new ImageIcon(initialDisplayImageFrame);
-		queryIcon = new ImageIcon(initialDisplayImageFrame);
+		queryIcon = new ImageIcon(initialDisplayImageFrameForQuery);
 		videoLabel = new JLabel();
 		queryLabel = new JLabel();
 		videoLabel.setIcon(videoIcon);
@@ -111,39 +137,92 @@ public class DisplayUI extends Frame implements ActionListener {
 		videoPanel.add(videoLabel);
 		queryVideoPanel.add(queryLabel);
 
-		gridPanel = new Panel(new GridLayout(2, 2));
+		gridPanel = new JPanel(new BorderLayout());
 
-		Panel queryOpsPanel = new Panel();
-		queryOpsPanel.setLayout(new GridLayout(2, 2));
-		queryOpsPanel.add(playQueryVideo);
-		queryOpsPanel.add(pauseQueryVideo);
-		queryOpsPanel.add(stopQueryVideo);
-		Panel queryVideoNamePanel = new Panel();
+		Panel queryOpsPanel = new Panel(new BorderLayout());
+		queryOpsPanel.setLayout(new BorderLayout());
+		queryOpsPanel.add(playQueryVideo, "East");
+		queryOpsPanel.add(pauseQueryVideo, "Center");
+		queryOpsPanel.add(stopQueryVideo, "West");
+//		Panel queryVideoNamePanel = new Panel();
 		queryVideoName = new Label(Constants.QUERY_VIDEO_NAME);
-		queryVideoNamePanel.add(queryVideoName);
-		queryOpsPanel.add(queryVideoNamePanel);
+//		queryVideoNamePanel.add(queryVideoName);
+//		queryOpsPanel.add(queryVideoNamePanel);
 
-		Panel opsPanel = new Panel();
-		opsPanel.setLayout(new GridLayout(2, 2));
-		opsPanel.add(playVideo);
-		opsPanel.add(pauseVideo);
-		opsPanel.add(stopVideo);
+		Panel opsPanel = new Panel(new BorderLayout());
+		opsPanel.setLayout(new BorderLayout());
+		opsPanel.add(playVideo, "East");
+		opsPanel.add(pauseVideo, "Center");
+		opsPanel.add(stopVideo, "West");
+		opsPanel.setSize(100, 100);
 
-		gridPanel.add(videoPanel);
-		gridPanel.add(queryVideoPanel);
-		gridPanel.add(opsPanel);
-		gridPanel.add(queryOpsPanel);
+		gridPanel.add(videoPanel, "East");
+		gridPanel.add(queryVideoPanel, "West");
+		
+		Panel opsAndGraph = new Panel(new BorderLayout());
+		Panel opsParentPanel = new Panel(new BorderLayout());
+		opsParentPanel.add(opsPanel, "East");
+		opsParentPanel.add(queryOpsPanel, "West");
+//		rootPanel.add(opsParentPanel, "South");
+		
+		DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+		dataset.addValue(15, "", "1970");
+		dataset.addValue(30, "", "1980");
+		dataset.addValue(15, "", "1990");
+		dataset.addValue(30, "", "2000");
+		dataset.addValue(15, "", "2010");
+		dataset.addValue(30, "", "2014");
+		
+		Panel graphParentPanel = new Panel(new BorderLayout());		
+		graphParentPanel.add(drawGraph(dataset), "East");
+		
+		sliderPanel = new Panel(new BorderLayout());
+		slider = new JSlider(0, 599, 0);
+		slider.setPreferredSize(new Dimension(354, 20));
+		slider.setPaintTrack(true);
+		slider.setPaintTicks(true);
+		slider.setPaintLabels(true);
+		slider.addChangeListener(this);
+//		sliderPanel.setPreferredSize(new Dimension(354, 20));
+		sliderPanel.add(slider, "East");
+		
+		Panel listParentPanel = new Panel(new BorderLayout());
+		
+		listPanel = new Panel();
+		listView = new JList<String>();
+		listView.addListSelectionListener(this);
+		listPanel.add(listView);
+		listParentPanel.add(listPanel, "East");
+		sliderPanel.add(listParentPanel, "South");
+
+		graphParentPanel.add(sliderPanel, "South");
+		
+		opsAndGraph.add(opsParentPanel, "North");
+		opsAndGraph.add(graphParentPanel, "South");
+		rootPanel.add(opsAndGraph, "South");
+
 
 		rootPanel.add(gridPanel);
-//		rootPanel.add( new JLabel(Constants.QUERY_VIDEO_NAME));		
+//		rootPanel.add( new JLabel(Constants.QUERY_VIDEO_NAME));
+		
 
 		add(rootPanel, BorderLayout.SOUTH);
 
 		images = new ArrayList<>();
-		queryImages = new ArrayList<>();
+		queryImages = new ArrayList<>();			
 
-		setupVideo(Constants.DB_VIDEO_NAME);
+		setupVideo(currentdbVideoName);
 		setupQueryVideo(Constants.QUERY_VIDEO_NAME);
+	}
+
+	private ChartPanel drawGraph(DefaultCategoryDataset dataSet) {
+		JFreeChart lineChart = ChartFactory.createLineChart("", "", "", dataSet,
+				PlotOrientation.VERTICAL, true, true, false);
+
+		ChartPanel chartPanel = new ChartPanel(lineChart);
+		chartPanel.setPreferredSize(new Dimension(354, 50));
+		
+		return chartPanel;
 	}
 
 	private String getFileNameSuffix(int num, String path) {
@@ -184,9 +263,13 @@ public class DisplayUI extends Frame implements ActionListener {
 	}
 
 	public void setupVideo(String path) throws IOException {
+		currentFrame = 0;
+		currentAudioFrame = 0;
+		images = new ArrayList<>();
 		for (int i = 0; i < 600; i++) {
 			File file = new File(
 					Constants.BASE_DB_VIDEO_PATH + path + "/" + path + getFileNameSuffix(i + 1, (Constants.BASE_DB_VIDEO_PATH + path + "/" + path)) + (i + 1) + ".rgb");
+			
 			BufferedImage img = getBufferedImageFromFile(file);
 			images.add(img);
 		}
@@ -195,6 +278,9 @@ public class DisplayUI extends Frame implements ActionListener {
 	}
 
 	public void setupQueryVideo(String path) throws IOException {
+		currentQueryFrame = 0;
+		currentQueryAudioFrame = 0;
+		queryImages = new ArrayList<>();
 		for (int i = 0; i < 150; i++) {
 			File file = new File(
 					Constants.BASE_QUERY_VIDEO_PATH + path + "/" + path + getFileNameSuffix(i + 1, Constants.BASE_QUERY_VIDEO_PATH + path + "/" + path) + (i + 1) + ".rgb");
@@ -230,12 +316,13 @@ public class DisplayUI extends Frame implements ActionListener {
 			public void run() {
 				for (int i = currentFrame; i < 600; i++) {
 					start1 = System.currentTimeMillis();
-					updateFrameInVideoAndRepaint(videoIcon, videoLabel, videoPanel, gridPanel, i, 0, 0);
+					updateFrameInVideoAndRepaint(videoIcon, videoLabel, videoPanel, gridPanel, i, 0, 1);
 					long diff = System.currentTimeMillis() - start1;
+
 					try {
 						// Subtracted 2 just to roughly synch up audio and video output without
 						// considerable delay.
-						Thread.sleep(1000 / Constants.FRAME_RATE - diff - 2);
+						Thread.sleep(Math.max(0, 1000 / Constants.FRAME_RATE - diff - 2));
 					} catch (InterruptedException e) {
 						// TODO : Think what to write here
 						currentFrame = i;
@@ -273,7 +360,7 @@ public class DisplayUI extends Frame implements ActionListener {
 			public void run() {
 				for (int i = currentQueryFrame; i < 150; i++) {
 					start1 = System.currentTimeMillis();
-					updateFrameInVideoAndRepaint(queryIcon, queryLabel, queryVideoPanel, gridPanel, i, 1, 1);
+					updateFrameInVideoAndRepaint(queryIcon, queryLabel, queryVideoPanel, gridPanel, i, 1, 0);
 					long diff = System.currentTimeMillis() - start1;
 					try {
 						Thread.sleep(1000 / Constants.FRAME_RATE - diff);
@@ -329,14 +416,14 @@ public class DisplayUI extends Frame implements ActionListener {
 				currentFrame = 0;
 				currentAudioFrame = 0;
 				audio.audioClip.setFramePosition(0);
-				updateFrameInVideoAndRepaint(videoIcon, videoLabel, videoPanel, gridPanel, currentFrame, 0, 0);
+				updateFrameInVideoAndRepaint(videoIcon, videoLabel, videoPanel, gridPanel, currentFrame, 0, 1);
 			}
 
 		} else if (e.getSource() == playQueryVideo) {
 			if (queryVideoState != Constants.PLAY) {
 				try {
-					playQueryVideo();
 					queryVideoState = Constants.PLAY;
+					playQueryVideo();
 				} catch (Exception e1) {
 					e1.printStackTrace();
 				}
@@ -360,15 +447,15 @@ public class DisplayUI extends Frame implements ActionListener {
 				currentQueryFrame = 0;
 				currentQueryAudioFrame = 0;
 				queryAudio.audioClip.setFramePosition(0);
-				updateFrameInVideoAndRepaint(queryIcon, queryLabel, queryVideoPanel, gridPanel, currentFrame, 1, 1);
+				updateFrameInVideoAndRepaint(queryIcon, queryLabel, queryVideoPanel, gridPanel, currentQueryFrame, 1, 0);
 			}
 		}
 	}
 
-	private void updateFrameInVideoAndRepaint(ImageIcon icon, JLabel label, Panel videoPanel, Panel gridPanel, int i,
+	private void updateFrameInVideoAndRepaint(ImageIcon icon, JLabel label, Panel videoPanel, JPanel gridPanel, int i,
 			int index, int type) {
 		BufferedImage image;
-		if (type == 0) {
+		if (type == 1) {
 			image = images.get(i);
 		} else {
 			image = queryImages.get(i);
@@ -380,13 +467,12 @@ public class DisplayUI extends Frame implements ActionListener {
 		videoPanel.add(label, 0);
 		gridPanel.add(videoPanel, index);
 		repaint();
-		revalidate();
+//		revalidate();
 	}
 
 	public static void main(String[] args) throws ClassNotFoundException {
 		try {
-			DisplayUI ui = new DisplayUI();
-//			ui.display();
+			DisplayUI ui = new DisplayUI();			
 //			ui.motionStatistics.getGraphMappingForAllVideos(Constants.QUERY_VIDEO_NAME);
 
 			ui.contrastSimilarity = ui.contrastStatistics.calculateStatsOfAllPairs(Constants.QUERY_VIDEO_NAME);
@@ -408,6 +494,12 @@ public class DisplayUI extends Frame implements ActionListener {
 			ui.aggregateRankingMap = sortByValues(ui.aggregateRankingMap);
 
 			ui.printResults();
+			ui.display();
+			
+//			ui.aggregateRankingMap.put("flowers", 1.0);
+//			ui.aggregateRankingMap.put("interview", 1.0);
+//			ui.aggregateRankingMap.put("sports", 1.0);
+			ui.interactiveUI();			
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -417,7 +509,7 @@ public class DisplayUI extends Frame implements ActionListener {
 	public void totalSimilarity(String query) {
 		double totalSimilarity = contrastSimilarity.get(query) + audioSimilarity.get(query) + colorSimilarity.get(query)
 				+ motionSimilarity.get(query);
-		
+
 		aggregateRankingMap.put(query, totalSimilarity);
 	}
 
@@ -439,6 +531,77 @@ public class DisplayUI extends Frame implements ActionListener {
 	public void printResults() {
 		for (Map.Entry<String, Double> entry : aggregateRankingMap.entrySet()) {
 			System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
+		}
+	}
+
+	public void interactiveUI() {
+		String[] topMatches = new String[3];
+		getTop3VideosArray(topMatches);
+
+		listPanel.remove(listView);
+		listView = new JList<String>(topMatches);
+		listView.addListSelectionListener(this);		
+		listPanel.add(listView);		
+		repaint();
+	}
+
+	private void getTop3VideosArray(String[] topMatches) {
+		int i = 0;
+		for (Map.Entry<String, Double> entry : aggregateRankingMap.entrySet()) {
+			if (i == 3)
+				break;
+			topMatches[i] = entry.getKey();
+			i++;
+		}
+	}
+
+	@Override
+	public void stateChanged(ChangeEvent e) {
+		if (e.getSource() == slider) {
+
+			videoState = Constants.PAUSE;
+			if (videoThread != null && audioThread != null) {
+				videoThread.interrupt();
+				audioThread.interrupt();
+				audio.audioClip.stop();
+			}
+			currentFrame = slider.getValue();
+			currentAudioFrame = (int) ((currentFrame / (double) Constants.DB_VIDEO_FRAME_SIZE)
+					* Constants.DB_AUDIO_FRAME_SIZE * 4);
+			BufferedImage scrubbedScreenshot = null;
+			try {
+				scrubbedScreenshot = getBufferedImageFromFile(new File(Constants.BASE_DB_VIDEO_PATH
+						+ currentdbVideoName + "/" + currentdbVideoName
+						+ getFileNameSuffix(currentFrame + 1, currentdbVideoName) + (currentFrame + 1) + ".rgb"));
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+
+			videoIcon = new ImageIcon(scrubbedScreenshot);
+			videoLabel.setIcon(videoIcon);
+			repaint();
+//			revalidate();
+		}
+	}
+
+	@Override
+	public void valueChanged(ListSelectionEvent e) {
+		if (e.getSource() == listView) {
+			String selectedVideo = (String) listView.getSelectedValue();
+			videoState = Constants.PAUSE;
+			if (videoThread != null && audioThread != null) {
+				videoThread.interrupt();
+				audioThread.interrupt();
+				audio.audioClip.stop();
+			}
+			try {
+				currentdbVideoName = selectedVideo;						
+				setupVideo(selectedVideo);
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 		}
 	}
 }
