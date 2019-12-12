@@ -12,9 +12,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random; 
 
 public class MotionStatistics {
 	Map<String, Double> similarities = new HashMap<>();
+	Map<String, Integer> bestStartingPosition = new HashMap<>();
 
 	public Map<String, Double> calculateStatsOfAllPairs(String queryPath) throws ClassNotFoundException, IOException {
 		Map<Integer, Double> distances = new HashMap<>();
@@ -53,12 +55,13 @@ public class MotionStatistics {
 				Constants.BASE_QUERY_VIDEO_PATH + queryPath + "/" + queryPath, 1);
 		iis.close();
 
-		return getSimilarityScore(dbMotionStatistics, dominantMotionInQuery);
+		return getSimilarityScore(dbMotionStatistics, dominantMotionInQuery, path);
 	}
 
 	private double getSimilarityScore(HashMap<Integer, Integer> dbMotionStatistics,
-			HashMap<Integer, Integer> dominantMotionInQuery) {
-		double leastDiff = 99999999;
+			HashMap<Integer, Integer> dominantMotionInQuery, String path) {
+		bestStartingPosition.put(path, 0);
+		double leastDiff = Double.MAX_VALUE;
 		for (int i = 0; i <= (dbMotionStatistics.size() - dominantMotionInQuery.size()); i++) {
 			double curDiff = 0;
 			for (int j = 0; j < dominantMotionInQuery.size(); j++) {
@@ -66,6 +69,7 @@ public class MotionStatistics {
 			}
 			if (curDiff < leastDiff) {
 				leastDiff = curDiff;
+				bestStartingPosition.replace(path, i);
 			}
 		}
 		return leastDiff;
@@ -101,26 +105,32 @@ public class MotionStatistics {
 	    for (int i = 0; i < Constants.DB_VIDEO_FRAME_SIZE; i++) {
 	        allFramesSimilarity.put(i, Double.MAX_VALUE);
 	    }
+	    int bestStartingPos = bestStartingPosition.get(path);
 	    double minDiff = Double.MAX_VALUE, maxDiff = Double.MIN_VALUE;
-		for (int i = 0; i <= (Constants.DB_VIDEO_FRAME_SIZE - Constants.QUERY_VIDEO_FRAME_SIZE); i++) {
-			for (int j = 0; j < Constants.QUERY_VIDEO_FRAME_SIZE; j++) {
-				double curDiff = Math.abs(dbMotionStatistics.get(i + j) - dominantMotionInQuery.get(j));
-				if (curDiff < allFramesSimilarity.get(i + j))
-					allFramesSimilarity.replace(i + j, curDiff);
-			}
-		}
-		for (int i = 0; i < Constants.DB_VIDEO_FRAME_SIZE; i++) {
-			double curDiff = allFramesSimilarity.get(i);
+	    for (int i = 0; i < 150; i++) {
+	    	int index = bestStartingPos + i;
+	    	double curDiff = Math.abs(dbMotionStatistics.get(index) - dominantMotionInQuery.get(i));
+	    	allFramesSimilarity.replace(index, curDiff);
 			if (curDiff < minDiff)
 				minDiff = curDiff;
 			if (curDiff > maxDiff)
-				maxDiff = curDiff;			
-		}
+				maxDiff = curDiff;
+	    }
 	    // Replacing diff by similarity
 	    for (int i = 0; i < Constants.DB_VIDEO_FRAME_SIZE; i++) {
 	        double diff = allFramesSimilarity.get(i);
 			double simVal = (1 - (diff - minDiff) / (maxDiff - minDiff)) * similarities.get(path);
 			allFramesSimilarity.replace(i, simVal);
+	    }
+	    for (int i = 0; i < bestStartingPos; i++) {
+	    	Random r = new Random();
+	    	double randomValue = r.nextInt(100)*0.05;
+	    	allFramesSimilarity.replace(i, randomValue);
+	    }
+	    for (int i = bestStartingPos + Constants.QUERY_VIDEO_FRAME_SIZE; i < Constants.DB_VIDEO_FRAME_SIZE; i++) {
+	    	Random r = new Random();
+	    	double randomValue = r.nextInt(100)*0.05;
+	    	allFramesSimilarity.replace(i, randomValue);
 	    }
 		return allFramesSimilarity;
 	}
