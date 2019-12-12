@@ -387,7 +387,7 @@ public class DisplayUI extends Frame implements ActionListener {
 		try {
 			DisplayUI ui = new DisplayUI();
 //			ui.display();
-			ui.motionStatistics.getGraphMappingForAllVideos(Constants.QUERY_VIDEO_NAME);
+//			ui.motionStatistics.getGraphMappingForAllVideos(Constants.QUERY_VIDEO_NAME);
 
 			ui.contrastSimilarity = ui.contrastStatistics.calculateStatsOfAllPairs(Constants.QUERY_VIDEO_NAME);
 
